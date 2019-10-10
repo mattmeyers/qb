@@ -20,14 +20,24 @@ type Query struct {
 	selectFields []string
 	insertCols   []string
 	values       []interface{}
-	whereParams  []whereParam
+	where        whereClauses
 }
 
-type whereParam struct {
-	col string
-	cmp string
-	val interface{}
+type whereLink int
+
+const (
+	whereStart whereLink = iota
+	whereAnd
+	whereOr
+)
+
+type whereClause struct {
+	col  string
+	cmp  string
+	val  interface{}
+	link whereLink
 }
+type whereClauses []whereClause
 
 func New() *Query {
 	return &Query{}
@@ -61,11 +71,25 @@ func (q *Query) Values(vals ...interface{}) *Query {
 }
 
 func (q *Query) Where(col, cmp string, val interface{}) *Query {
-	q.whereParams = append(q.whereParams, whereParam{col: col, cmp: cmp, val: val})
+	q.where = append(q.where, whereClause{col: col, cmp: cmp, val: val, link: whereStart})
 	return q
 }
 
-func (q *Query) String() (string, []interface{}) {
+func (q *Query) AndWhere(col, cmp string, val interface{}) *Query {
+	q.where = append(q.where, whereClause{col: col, cmp: cmp, val: val, link: whereAnd})
+	return q
+}
+
+func (q *Query) OrWhere(col, cmp string, val interface{}) *Query {
+	q.where = append(q.where, whereClause{col: col, cmp: cmp, val: val, link: whereOr})
+	return q
+}
+
+func (q *Query) String() (string, []interface{}, error) {
+	if q.table == "" {
+		return "", nil, ErrMissingTable
+	}
+
 	var query string
 	var params []interface{}
 
@@ -76,26 +100,22 @@ func (q *Query) String() (string, []interface{}) {
 		query, params = q.buildInsert()
 	}
 
-	return query, params
+	return query, params, nil
 }
 
 func (q *Query) buildSelect() (string, []interface{}) {
 	var sb strings.Builder
 	var params []interface{}
+	var where string
 
 	sb.WriteString(fmt.Sprintf("SELECT %s FROM %s", strings.Join(q.selectFields, ", "), q.table))
 
-	if wLen := len(q.whereParams); wLen > 0 {
+	if len(q.where) > 0 {
+		where, params = q.where.string()
 		sb.WriteString(" WHERE ")
-
-		conditions := make([]string, wLen)
-		for i, w := range q.whereParams {
-			conditions[i] = fmt.Sprintf("%s%s?", w.col, w.cmp)
-			params = append(params, w.val)
-		}
-
-		sb.WriteString(strings.Join(conditions, ", "))
+		sb.WriteString(where)
 	}
+
 	return sb.String(), params
 }
 
@@ -111,4 +131,24 @@ func (q *Query) buildUpdate() (string, []interface{}) {
 
 func (q *Query) buildDelete() (string, []interface{}) {
 	return "", nil
+}
+
+func (w whereClauses) string() (string, []interface{}) {
+	var parts []string
+	var params []interface{}
+
+	for i, c := range w {
+		if i > 0 {
+			if c.link == whereAnd {
+				parts = append(parts, "AND")
+			} else if c.link == whereOr {
+				parts = append(parts, "OR")
+			}
+		}
+
+		parts = append(parts, fmt.Sprintf("%s%s?", c.col, c.cmp))
+		params = append(params, c.val)
+
+	}
+	return strings.Join(parts, " "), params
 }
