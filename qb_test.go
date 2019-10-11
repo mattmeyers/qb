@@ -1,28 +1,50 @@
 package qb
 
 import (
-	"fmt"
 	"testing"
 )
 
-func TestSelect(t *testing.T) {
-	q := New()
-	q.Select("a", "b", "c").From("test_table").Where("d", "=", "e").AndWhere("f", ">", 5).OrWhere("g", "!=", false)
-
-	query, params, _ := q.String()
-	fmt.Println(query)
-	fmt.Println(params)
-}
-
-func TestInsert(t *testing.T) {
-	q := New()
-	q.InsertInto("test_table").Columns("a", "b").Values("c", 4)
-
-	if true {
-		q.Columns("col").Values(true)
+func TestGeneratePlaceholders(t *testing.T) {
+	type args struct {
+		symbol string
+		num    int
 	}
-
-	query, params, _ := q.String()
-	fmt.Println(query)
-	fmt.Println(params)
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "Negative repeat",
+			args: args{"?", -1},
+			want: "()",
+		},
+		{
+			name: "Repeat zero times",
+			args: args{"?", 0},
+			want: "()",
+		},
+		{
+			name: "Repeat once",
+			args: args{"?", 1},
+			want: "(?)",
+		},
+		{
+			name: "Repeat twice",
+			args: args{"?", 2},
+			want: "(?, ?)",
+		},
+		{
+			name: "Repeat thrice",
+			args: args{"?", 3},
+			want: "(?, ?, ?)",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GeneratePlaceholders(tt.args.symbol, tt.args.num); got != tt.want {
+				t.Errorf("GeneratePlaceholders() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
