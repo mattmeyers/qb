@@ -7,5 +7,6 @@ func (e Error) Error() string {
 }
 
 const (
-	ErrMissingTable = Error("no table specified")
+	ErrMissingTable    = Error("no table specified")
+	ErrMissingSetPairs = Error("no set pairs provided")
 )

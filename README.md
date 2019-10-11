@@ -12,7 +12,17 @@ type QueryBuilder interface {
 
 After setting all of the query's values, call `String()` to retrieve the query and a slice of correctly ordered parameters.
 
-## Select
+## Install
+
+```
+go get -u github.com/mattmeyers/qb
+```
+
+## Generating Queries
+
+Queries are built using unexported structs.  Therefore, methods should be chained following the initialization function for the given type of query.
+
+### Select
 
 A select query can be initialized with the `Select(cols ...string)` function.  The struct returned from this function call can then call the following functions:
 
@@ -37,7 +47,7 @@ qb.Select("id")
   .String()
 ```
 
-## Insert
+### Insert
 
 An insert query can be initialized with the `InsertInto(table string)` function.  The struct returned from this function call can then call the following functions:
 
@@ -59,7 +69,31 @@ qb.InsertInto("products")
   .String()
 ```
 
-## Delete
+### Update
+
+An update query can be initialized with the `Update(table string)` function.  The struct returned from this function call can then call the following functions:
+
+- `Set(col string, val interface{})`
+- `Where(col, cmp string, val interface{})`
+- `OrWhere(col, cmp string, val interface{})`
+
+Calling `Set` with the same col value will update the previous value.  For example, in order to generate the query 
+
+```sql
+UPDATE products SET name=?, qty=? WHERE item_id=?
+```
+
+use the following code:
+
+```go
+qb.Update("products")
+  .Set("name", "Screwdriver")
+  .Set("qty", 10)
+  .Where("item_id", "=", "a123")
+  .String()
+```
+
+### Delete
 
 A delete query can be initialized with the `DeleteFrom(table string)` function.  The struct returned from this function call can then call the following functions:
 
@@ -77,7 +111,16 @@ use the following code:
 ```go
 qb.DeleteFrom("products")
   .Where("item_number", "=", "a123")
-  .Where("qty", "<", tru5)
+  .Where("qty", "<", 5)
   .OrWhere("backordered", "=", true)
   .String()
+```
+
+## Error Handling
+
+Calling the `String()` function returns an `error` as its third return value.  This error will describe any missing values.  The following error constants are defined in the package and can be used with `errors.Is()` if using Go 1.13+.
+
+```go
+ErrMissingTable    = Error("no table specified")
+ErrMissingSetPairs = Error("no set pairs provided")
 ```
