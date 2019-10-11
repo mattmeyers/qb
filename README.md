@@ -6,7 +6,7 @@ Every query builder struct implements the QueryBuilder interface defined as
 
 ```go
 type QueryBuilder interface {
-    String() (string, []interface, error)
+    String() (string, []interface{}, error)
 }
 ```
 
@@ -56,5 +56,28 @@ use the following code:
 qb.InsertInto("products")
   .Columns("name", "qty")
   .Values("Hammer", 5)
+  .String()
+```
+
+## Delete
+
+A delete query can be initialized with the `DeleteFrom(table string)` function.  The struct returned from this function call can then call the following functions:
+
+- `Where(col, cmp string, val interface{})`
+- `OrWhere(col, cmp string, val interface{})`
+
+For example, in order to generate the query 
+
+```sql
+DELETE FROM products WHERE item_number=? AND qty<? OR backordered=?
+```
+
+use the following code:
+
+```go
+qb.DeleteFrom("products")
+  .Where("item_number", "=", "a123")
+  .Where("qty", "<", tru5)
+  .OrWhere("backordered", "=", true)
   .String()
 ```
