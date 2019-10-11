@@ -7,7 +7,6 @@ import (
 )
 
 func TestSelect(t *testing.T) {
-
 	q := Select("a", "b", "c").From("test_table").Where("d", "=", "e").Where("f", ">", 5).OrWhere("g", "!=", false)
 
 	query, params, err := q.String()

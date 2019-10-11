@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+type QueryBuilder interface {
+	String() (string, []interface{}, error)
+}
+
 // GeneratePlaceholders generates a comma seperated list of the provided
 // symbol and places the list in parentheses. If num is less than or
 // equal to zero, then an empty set of parentheses is returned.
