@@ -28,6 +28,13 @@ func Test_selectQuery_String(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "Limit and offset",
+			query:   Select("a", "b").From("test_table").Limit(10).Offset(20),
+			want:    "SELECT a, b FROM test_table LIMIT 10 OFFSET 20",
+			want1:   nil,
+			wantErr: false,
+		},
+		{
 			name:    "Missing table",
 			query:   Select(),
 			want:    "",

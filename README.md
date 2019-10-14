@@ -29,6 +29,8 @@ A select query can be initialized with the `Select(cols ...string)` function.  T
 - `From(table string)`
 - `Where(col, cmp string, val interface{})`
 - `OrWhere(col, cmp string, val interface{})`
+- `Limit(val int64)`
+- `Offset(val int64)`
 
 For example, in order to generate the query 
 
@@ -54,6 +56,7 @@ An insert query can be initialized with the `InsertInto(table string)` function.
 - `Columns(cols ...string)`
 - `Values(vals ...interface{})`
 - `OnConflict(target, action interface{})`
+- `Returning(cols ...string)`
 
 Calling `Columns` or `Values` mulitple times will append the passed values to the columns and values arrays.  This can be handy when inserting optional columns. For example, in order to generate the query 
 

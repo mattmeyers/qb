@@ -9,6 +9,8 @@ type selectQuery struct {
 	table string
 	cols  []string
 	whereClause
+	limit  *int64
+	offset *int64
 }
 
 func Select(vals ...string) *selectQuery {
@@ -33,6 +35,16 @@ func (q *selectQuery) OrWhere(col, cmp string, val interface{}) *selectQuery {
 	return q
 }
 
+func (q *selectQuery) Limit(val int64) *selectQuery {
+	q.limit = &val
+	return q
+}
+
+func (q *selectQuery) Offset(val int64) *selectQuery {
+	q.offset = &val
+	return q
+}
+
 func (q *selectQuery) String() (string, []interface{}, error) {
 	if q.table == "" {
 		return "", nil, ErrMissingTable
@@ -48,6 +60,14 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 		where, params = q.whereClause.string()
 		sb.WriteString(" WHERE ")
 		sb.WriteString(where)
+	}
+
+	if q.limit != nil {
+		fmt.Fprintf(&sb, " LIMIT %d", *q.limit)
+	}
+
+	if q.offset != nil {
+		fmt.Fprintf(&sb, " OFFSET %d", *q.offset)
 	}
 
 	return sb.String(), params, nil
