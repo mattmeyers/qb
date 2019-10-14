@@ -44,11 +44,12 @@ func (q *updateQuery) String() (string, []interface{}, error) {
 	sb.WriteString(q.table)
 	sb.WriteString(" SET ")
 
+	keys := orderKeys(q.setPairs)
+
 	sets := make([]string, len(q.setPairs))
-	i := 0
-	for k, v := range q.setPairs {
+	for i, k := range keys {
 		sets[i] = fmt.Sprintf("%s=?", k)
-		params[i] = v
+		params[i] = q.setPairs[k]
 		i++
 	}
 	sb.WriteString(strings.Join(sets, ", "))

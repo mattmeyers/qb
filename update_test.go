@@ -7,8 +7,6 @@ import (
 
 // Because we're storing setPairs in a map, the order of the sets doesn't remain the same.
 // If these tests fail, check manually. They're probably fine.
-//
-// TODO: Make tests pass consistently
 func Test_updateQuery_String(t *testing.T) {
 	tests := []struct {
 		name    string

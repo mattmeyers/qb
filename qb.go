@@ -2,6 +2,7 @@ package qb
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -22,4 +23,15 @@ func GeneratePlaceholders(symbol string, num int) string {
 		p[i] = symbol
 	}
 	return fmt.Sprint("(", strings.Join(p, ", "), ")")
+}
+
+func orderKeys(m map[string]interface{}) []string {
+	kArr := make([]string, len(m))
+	i := 0
+	for k := range m {
+		kArr[i] = k
+		i++
+	}
+	sort.Strings(kArr)
+	return kArr
 }

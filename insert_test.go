@@ -15,21 +15,35 @@ func Test_insertQuery_String(t *testing.T) {
 	}{
 		{
 			name:    "Basic insert",
-			query:   InsertInto("test_table").Columns("a", "b").Values("c", "d"),
+			query:   InsertInto("test_table").Col("a", "c").Col("b", "d"),
+			want:    "INSERT INTO test_table (a, b) VALUES (?, ?)",
+			want1:   []interface{}{"c", "d"},
+			wantErr: false,
+		},
+		{
+			name:    "Multiple column insert",
+			query:   InsertInto("test_table").Cols([]string{"a", "b"}, []interface{}{"c", "d"}...),
 			want:    "INSERT INTO test_table (a, b) VALUES (?, ?)",
 			want1:   []interface{}{"c", "d"},
 			wantErr: false,
 		},
 		{
 			name:    "Staggered insert",
-			query:   InsertInto("test_table").Columns("a", "b").Values("c", "d").Columns("e").Values(1),
+			query:   InsertInto("test_table").Cols([]string{"a", "b"}, []interface{}{"c", "d"}...).Col("e", 1),
 			want:    "INSERT INTO test_table (a, b, e) VALUES (?, ?, ?)",
 			want1:   []interface{}{"c", "d", 1},
 			wantErr: false,
 		},
 		{
 			name:    "Missing table",
-			query:   InsertInto("").Columns("a", "b").Values("c", "d"),
+			query:   InsertInto("").Col("a", "b"),
+			want:    "",
+			want1:   nil,
+			wantErr: true,
+		},
+		{
+			name:    "Col-Val mismatch",
+			query:   InsertInto("test_table").Cols([]string{}, "b"),
 			want:    "",
 			want1:   nil,
 			wantErr: true,

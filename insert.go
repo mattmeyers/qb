@@ -6,35 +6,52 @@ import (
 )
 
 type insertQuery struct {
-	table string
-	cols  []string
-	vals  []interface{}
+	table  string
+	valMap map[string]interface{}
+	err    error
 }
 
 func InsertInto(table string) *insertQuery {
-	return &insertQuery{table: table}
+	return &insertQuery{table: table, valMap: make(map[string]interface{})}
 }
 
-func (q *insertQuery) Columns(cols ...string) *insertQuery {
-	q.cols = append(q.cols, cols...)
+func (q *insertQuery) Col(col string, val interface{}) *insertQuery {
+	q.valMap[col] = val
 	return q
 }
 
-func (q *insertQuery) Values(vals ...interface{}) *insertQuery {
-	q.vals = append(q.vals, vals...)
+func (q *insertQuery) Cols(cols []string, vals ...interface{}) *insertQuery {
+	if len(cols) != len(vals) {
+		q.err = ErrColValMismatch
+		return q
+	}
+
+	for i, c := range cols {
+		q.Col(c, vals[i])
+	}
+
 	return q
 }
 
 func (q *insertQuery) String() (string, []interface{}, error) {
 	if q.table == "" {
 		return "", nil, ErrMissingTable
+	} else if q.err != nil {
+		return "", nil, q.err
 	}
+
+	keys := orderKeys(q.valMap)
+	vals := make([]interface{}, len(keys))
+	for i, k := range keys {
+		vals[i] = q.valMap[k]
+	}
+
 	query := fmt.Sprintf(
 		"INSERT INTO %s (%s) VALUES %s",
 		q.table,
-		strings.Join(q.cols, ", "),
-		GeneratePlaceholders("?", len(q.vals)),
+		strings.Join(keys, ", "),
+		GeneratePlaceholders("?", len(vals)),
 	)
 
-	return query, q.vals, nil
+	return query, vals, nil
 }
