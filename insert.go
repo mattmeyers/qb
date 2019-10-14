@@ -10,6 +10,7 @@ type insertQuery struct {
 	valMap map[string]interface{}
 	err    error
 	*conflictResolver
+	rebinder Rebinder
 }
 
 func InsertInto(table string) *insertQuery {
@@ -50,6 +51,11 @@ func (q *insertQuery) OnConflict(target, action interface{}) *insertQuery {
 	return q
 }
 
+func (q *insertQuery) RebindWith(r Rebinder) *insertQuery {
+	q.rebinder = r
+	return q
+}
+
 func (q *insertQuery) String() (string, []interface{}, error) {
 	if q.table == "" {
 		return "", nil, ErrMissingTable
@@ -79,6 +85,10 @@ func (q *insertQuery) String() (string, []interface{}, error) {
 		}
 		query = fmt.Sprintf("%s %s", query, cQuery)
 		params = append(params, p...)
+	}
+
+	if q.rebinder != nil {
+		query = q.rebinder.Rebind(query)
 	}
 
 	return query, params, nil
