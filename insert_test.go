@@ -16,22 +16,29 @@ func Test_insertQuery_String(t *testing.T) {
 		{
 			name:    "Basic insert",
 			query:   InsertInto("test_table").Col("a", "c").Col("b", "d"),
-			want:    "INSERT INTO test_table (a, b) VALUES (?, ?)",
+			want:    `INSERT INTO "test_table" (a, b) VALUES (?, ?)`,
 			want1:   []interface{}{"c", "d"},
 			wantErr: false,
 		},
 		{
 			name:    "Multiple column insert",
 			query:   InsertInto("test_table").Cols([]string{"a", "b"}, []interface{}{"c", "d"}...),
-			want:    "INSERT INTO test_table (a, b) VALUES (?, ?)",
+			want:    `INSERT INTO "test_table" (a, b) VALUES (?, ?)`,
 			want1:   []interface{}{"c", "d"},
 			wantErr: false,
 		},
 		{
 			name:    "Staggered insert",
 			query:   InsertInto("test_table").Cols([]string{"a", "b"}, []interface{}{"c", "d"}...).Col("e", 1),
-			want:    "INSERT INTO test_table (a, b, e) VALUES (?, ?, ?)",
+			want:    `INSERT INTO "test_table" (a, b, e) VALUES (?, ?, ?)`,
 			want1:   []interface{}{"c", "d", 1},
+			wantErr: false,
+		},
+		{
+			name:    "Insert with returning",
+			query:   InsertInto("test_table").Cols([]string{"a", "b"}, []interface{}{"c", "d"}...).Returning("id", "a"),
+			want:    `INSERT INTO "test_table" (a, b) VALUES (?, ?) RETURNING id, a`,
+			want1:   []interface{}{"c", "d"},
 			wantErr: false,
 		},
 		{

@@ -39,12 +39,12 @@ SELECT id FROM products WHERE item_number=? AND in_stock=? OR backordered=?
 use the following code:
 
 ```go
-qb.Select("id")
-  .From("products")
-  .Where("item_number", "=", "a123")
-  .Where("in_stock", "=", true)
-  .OrWhere("backordered", "=", false)
-  .String()
+qb.Select("id").
+   From("products").
+   Where("item_number", "=", "a123").
+   Where("in_stock", "=", true).
+   OrWhere("backordered", "=", false).
+   String()
 ```
 
 ### Insert
@@ -64,13 +64,13 @@ INSERT INTO products (name, qty) VALUES (?, ?)
 use the following code:
 
 ```go
-qb.InsertInto("products")
-  .Columns("name", "qty")
-  .Values("Hammer", 5)
-  .String()
+qb.InsertInto("products").
+   Columns("name", "qty").
+   Values("Hammer", 5).
+   String()
 ```
 
-If using PostgresQL, the `OnConflict` function can be used to generate an `ON CONFLICT target action` clause.  The provided target should be of type `TargetColumn`, `TargetConstraint`, or `whereClause`.  The provided action should be of type `ActionDoNothing` or `*updateQuery`.  For example, to generate the query 
+If using PostgreSQL, the `OnConflict` function can be used to generate an `ON CONFLICT target action` clause.  The provided target should be of type `TargetColumn`, `TargetConstraint`, or `whereClause`.  The provided action should be of type `ActionDoNothing` or `*updateQuery`.  For example, to generate the query 
 
 ```sql
 INSERT INTO products (name, item_number) VALUES (?, ?) ON CONFLICT (item_number) DO UPDATE SET item_number=123
@@ -79,14 +79,14 @@ INSERT INTO products (name, item_number) VALUES (?, ?) ON CONFLICT (item_number)
 use the following code:
 
 ```go
-qb.InsertInto("products")
-  .Col("name", "Hammer")
-  .Col("item_number", 456)
-  .OnConflict(
-    qb.TargetColumn("item_number"), 
-    qb.Update("").Set("item_number", 123),
-  )
-  .String()
+qb.InsertInto("products").
+   Col("name", "Hammer").
+   Col("item_number", 456).
+   OnConflict(
+     qb.TargetColumn("item_number"), 
+     qb.Update("").Set("item_number", 123),
+   ).
+   String()
 ```
 
 ### Update
@@ -106,11 +106,11 @@ UPDATE products SET name=?, qty=? WHERE item_id=?
 use the following code:
 
 ```go
-qb.Update("products")
-  .Set("name", "Screwdriver")
-  .Set("qty", 10)
-  .Where("item_id", "=", "a123")
-  .String()
+qb.Update("products").
+   Set("name", "Screwdriver").
+   Set("qty", 10).
+   Where("item_id", "=", "a123").
+   String()
 ```
 
 ### Delete
@@ -129,11 +129,11 @@ DELETE FROM products WHERE item_number=? AND qty<? OR backordered=?
 use the following code:
 
 ```go
-qb.DeleteFrom("products")
-  .Where("item_number", "=", "a123")
-  .Where("qty", "<", 5)
-  .OrWhere("backordered", "=", true)
-  .String()
+qb.DeleteFrom("products").
+   Where("item_number", "=", "a123").
+   Where("qty", "<", 5).
+   OrWhere("backordered", "=", true).
+   String()
 ```
 
 ## Error Handling

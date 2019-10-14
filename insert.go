@@ -6,9 +6,10 @@ import (
 )
 
 type insertQuery struct {
-	table  string
-	valMap map[string]interface{}
-	err    error
+	table     string
+	valMap    map[string]interface{}
+	returning []string
+	err       error
 	*conflictResolver
 	rebinder Rebinder
 }
@@ -36,7 +37,7 @@ func (q *insertQuery) Cols(cols []string, vals ...interface{}) *insertQuery {
 }
 
 // OnConflict adds a `ON CONFLICT target action` clause to the query.
-// This is only for PostgresQL.
+// This is only for PostgreSQL.
 //
 // The target can take three forms:
 //		1. (column_name) - a column name (TargetColumn)
@@ -48,6 +49,11 @@ func (q *insertQuery) Cols(cols []string, vals ...interface{}) *insertQuery {
 //		2. DO UPDATE SET col_1=val_1,... WHERE condition - update fields (updateQuery)
 func (q *insertQuery) OnConflict(target, action interface{}) *insertQuery {
 	q.conflictResolver = &conflictResolver{target, action}
+	return q
+}
+
+func (q *insertQuery) Returning(cols ...string) *insertQuery {
+	q.returning = append(q.returning, cols...)
 	return q
 }
 
@@ -70,7 +76,7 @@ func (q *insertQuery) String() (string, []interface{}, error) {
 	}
 
 	query := fmt.Sprintf(
-		"INSERT INTO %s (%s) VALUES %s",
+		`INSERT INTO "%s" (%s) VALUES %s`,
 		q.table,
 		strings.Join(keys, ", "),
 		GeneratePlaceholders("?", len(vals)),
@@ -85,6 +91,10 @@ func (q *insertQuery) String() (string, []interface{}, error) {
 		}
 		query = fmt.Sprintf("%s %s", query, cQuery)
 		params = append(params, p...)
+	}
+
+	if len(q.returning) > 0 {
+		query = fmt.Sprintf("%s RETURNING %s", query, strings.Join(q.returning, ", "))
 	}
 
 	if q.rebinder != nil {

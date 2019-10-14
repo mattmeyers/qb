@@ -9,6 +9,7 @@ type updateQuery struct {
 	table    string
 	setPairs map[string]interface{}
 	whereClause
+	rebinder Rebinder
 }
 
 func Update(table string) *updateQuery {
@@ -30,6 +31,11 @@ func (q *updateQuery) OrWhere(col, cmp string, val interface{}) *updateQuery {
 	return q
 }
 
+func (q *updateQuery) RebindWith(r Rebinder) *updateQuery {
+	q.rebinder = r
+	return q
+}
+
 func (q *updateQuery) String() (string, []interface{}, error) {
 	return q.string(true)
 }
@@ -47,8 +53,7 @@ func (q *updateQuery) string(tableRequired bool) (string, []interface{}, error) 
 	sb.WriteString("UPDATE ")
 
 	if q.table != "" {
-		sb.WriteString(q.table)
-		sb.WriteString(" ")
+		fmt.Fprintf(&sb, `"%s" `, q.table)
 	}
 	sb.WriteString("SET ")
 
@@ -69,5 +74,11 @@ func (q *updateQuery) string(tableRequired bool) (string, []interface{}, error) 
 		sb.WriteString(where)
 	}
 
-	return sb.String(), params, nil
+	query := sb.String()
+
+	if q.rebinder != nil {
+		query = q.rebinder.Rebind(query)
+	}
+
+	return query, params, nil
 }
