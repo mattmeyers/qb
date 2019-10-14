@@ -42,7 +42,7 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 	var params []interface{}
 	var where string
 
-	sb.WriteString(fmt.Sprintf("SELECT %s FROM %s", strings.Join(q.cols, ", "), q.table))
+	fmt.Fprintf(&sb, "SELECT %s FROM %s", strings.Join(q.cols, ", "), q.table)
 
 	if len(q.clauses) > 0 {
 		where, params = q.whereClause.string()

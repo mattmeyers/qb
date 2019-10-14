@@ -31,7 +31,11 @@ func (q *updateQuery) OrWhere(col, cmp string, val interface{}) *updateQuery {
 }
 
 func (q *updateQuery) String() (string, []interface{}, error) {
-	if q.table == "" {
+	return q.string(true)
+}
+
+func (q *updateQuery) string(tableRequired bool) (string, []interface{}, error) {
+	if q.table == "" && tableRequired {
 		return "", nil, ErrMissingTable
 	} else if len(q.setPairs) == 0 {
 		return "", nil, ErrMissingSetPairs
@@ -41,8 +45,12 @@ func (q *updateQuery) String() (string, []interface{}, error) {
 	params := make([]interface{}, len(q.setPairs))
 
 	sb.WriteString("UPDATE ")
-	sb.WriteString(q.table)
-	sb.WriteString(" SET ")
+
+	if q.table != "" {
+		sb.WriteString(q.table)
+		sb.WriteString(" ")
+	}
+	sb.WriteString("SET ")
 
 	keys := orderKeys(q.setPairs)
 

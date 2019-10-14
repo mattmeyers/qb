@@ -53,6 +53,7 @@ An insert query can be initialized with the `InsertInto(table string)` function.
 
 - `Columns(cols ...string)`
 - `Values(vals ...interface{})`
+- `OnConflict(target, action interface{})`
 
 Calling `Columns` or `Values` mulitple times will append the passed values to the columns and values arrays.  This can be handy when inserting optional columns. For example, in order to generate the query 
 
@@ -66,6 +67,25 @@ use the following code:
 qb.InsertInto("products")
   .Columns("name", "qty")
   .Values("Hammer", 5)
+  .String()
+```
+
+If using PostgresQL, the `OnConflict` function can be used to generate an `ON CONFLICT target action` clause.  The provided target should be of type `TargetColumn`, `TargetConstraint`, or `whereClause`.  The provided action should be of type `ActionDoNothing` or `*updateQuery`.  For example, to generate the query 
+
+```sql
+INSERT INTO products (name, item_number) VALUES (?, ?) ON CONFLICT (item_number) DO UPDATE SET item_number=123
+```
+
+use the following code:
+
+```go
+qb.InsertInto("products")
+  .Col("name", "Hammer")
+  .Col("item_number", 456)
+  .OnConflict(
+    qb.TargetColumn("item_number"), 
+    qb.Update("").Set("item_number", 123),
+  )
   .String()
 ```
 
@@ -123,4 +143,7 @@ Calling the `String()` function returns an `error` as its third return value.  T
 ```go
 ErrMissingTable    = Error("no table specified")
 ErrMissingSetPairs = Error("no set pairs provided")
+ErrColValMismatch  = Error("the number of columns and values do not match")
+ErrInvalidConflictTarget = Error("invalid conflict target")
+ErrInvalidConflictAction = Error("invalid conflict action")
 ```

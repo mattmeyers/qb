@@ -9,6 +9,7 @@ type insertQuery struct {
 	table  string
 	valMap map[string]interface{}
 	err    error
+	*conflictResolver
 }
 
 func InsertInto(table string) *insertQuery {
@@ -33,6 +34,22 @@ func (q *insertQuery) Cols(cols []string, vals ...interface{}) *insertQuery {
 	return q
 }
 
+// OnConflict adds a `ON CONFLICT target action` clause to the query.
+// This is only for PostgresQL.
+//
+// The target can take three forms:
+//		1. (column_name) - a column name (TargetColumn)
+//		2. ON CONSTRAINT constraint_name - a UNIQUE constraint name (targetConstraint)
+//		3. WHERE predicate - a where clause (whereClause)
+//
+// The target can take two forms:
+// 		1. DO NOTHING - nothing is done (ActionDoNothing)
+//		2. DO UPDATE SET col_1=val_1,... WHERE condition - update fields (updateQuery)
+func (q *insertQuery) OnConflict(target, action interface{}) *insertQuery {
+	q.conflictResolver = &conflictResolver{target, action}
+	return q
+}
+
 func (q *insertQuery) String() (string, []interface{}, error) {
 	if q.table == "" {
 		return "", nil, ErrMissingTable
@@ -53,5 +70,16 @@ func (q *insertQuery) String() (string, []interface{}, error) {
 		GeneratePlaceholders("?", len(vals)),
 	)
 
-	return query, vals, nil
+	params := vals
+
+	if q.conflictResolver != nil {
+		cQuery, p, err := q.conflictResolver.String()
+		if err != nil {
+			return "", nil, err
+		}
+		query = fmt.Sprintf("%s %s", query, cQuery)
+		params = append(params, p...)
+	}
+
+	return query, params, nil
 }
