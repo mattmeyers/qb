@@ -28,6 +28,13 @@ func Test_selectQuery_String(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "Inner join",
+			query:   Select().From("test_table").InnerJoin("second_table", "test_table.id=second_table.test_table_id"),
+			want:    "SELECT * FROM test_table INNER JOIN second_table ON test_table.id=second_table.test_table_id",
+			want1:   nil,
+			wantErr: false,
+		},
+		{
 			name:    "Limit and offset",
 			query:   Select("a", "b").From("test_table").Limit(10).Offset(20),
 			want:    "SELECT a, b FROM test_table LIMIT 10 OFFSET 20",

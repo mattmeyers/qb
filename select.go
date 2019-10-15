@@ -8,6 +8,7 @@ import (
 type selectQuery struct {
 	table string
 	cols  []string
+	joinClause
 	whereClause
 	limit  *int64
 	offset *int64
@@ -22,6 +23,31 @@ func Select(vals ...string) *selectQuery {
 
 func (q *selectQuery) From(val string) *selectQuery {
 	q.table = val
+	return q
+}
+
+func (q *selectQuery) InnerJoin(table, condition string) *selectQuery {
+	q.joinClause = append(q.joinClause, newJoin(innerJoin, table, condition))
+	return q
+}
+
+func (q *selectQuery) LeftJoin(table, condition string) *selectQuery {
+	q.joinClause = append(q.joinClause, newJoin(leftOuterJoin, table, condition))
+	return q
+}
+
+func (q *selectQuery) RightJoin(table, condition string) *selectQuery {
+	q.joinClause = append(q.joinClause, newJoin(rightOuterJoin, table, condition))
+	return q
+}
+
+func (q *selectQuery) FullJoin(table, condition string) *selectQuery {
+	q.joinClause = append(q.joinClause, newJoin(fullOuterJoin, table, condition))
+	return q
+}
+
+func (q *selectQuery) CrossJoin(table, condition string) *selectQuery {
+	q.joinClause = append(q.joinClause, newJoin(crossJoin, table, condition))
 	return q
 }
 
@@ -55,6 +81,11 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 	var where string
 
 	fmt.Fprintf(&sb, "SELECT %s FROM %s", strings.Join(q.cols, ", "), q.table)
+
+	if len(q.joinClause) > 0 {
+		j, _, _ := q.joinClause.String()
+		fmt.Fprintf(&sb, " %s", j)
+	}
 
 	if len(q.clauses) > 0 {
 		where, params = q.whereClause.string()
