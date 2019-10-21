@@ -15,7 +15,7 @@ type TargetConstraint string
 
 type actionDoNothing string
 
-const ActionDoNothing = actionDoNothing("DO NOTHING")
+const ActionDoNothing = actionDoNothing("NOTHING")
 
 func (c *conflictResolver) String() (string, []interface{}, error) {
 	var sb strings.Builder
@@ -35,7 +35,7 @@ func (c *conflictResolver) String() (string, []interface{}, error) {
 		return "", nil, ErrInvalidConflictTarget
 	}
 
-	sb.WriteString(" ")
+	sb.WriteString(" DO ")
 
 	switch v := c.action.(type) {
 	case actionDoNothing:
