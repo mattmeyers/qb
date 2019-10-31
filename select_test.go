@@ -3,6 +3,8 @@ package qb
 import (
 	"reflect"
 	"testing"
+
+	"github.com/masterminds/squirrel"
 )
 
 func Test_selectQuery_String(t *testing.T) {
@@ -42,6 +44,20 @@ func Test_selectQuery_String(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "Group by",
+			query:   Select("a", "b").From("test_table").GroupBy("a", "b"),
+			want:    "SELECT a, b FROM test_table GROUP BY a, b",
+			want1:   nil,
+			wantErr: false,
+		},
+		{
+			name:    "Order by",
+			query:   Select("a", "b").From("test_table").OrderBy("a", Asc).OrderBy("b", Desc),
+			want:    "SELECT a, b FROM test_table ORDER BY a ASC, b DESC",
+			want1:   nil,
+			wantErr: false,
+		},
+		{
 			name:    "Missing table",
 			query:   Select(),
 			want:    "",
@@ -63,5 +79,50 @@ func Test_selectQuery_String(t *testing.T) {
 				t.Errorf("insertQuery.String() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
+	}
+}
+
+func qbSelect() {
+	Select().
+		From("test_table").
+		InnerJoin("second_table", "test_table.id=second_table.test_table_id").
+		LeftJoin("third_table", "second_table.third_id=third_table.id").
+		Limit(10).
+		Offset(15).
+		GroupBy("first_table.id").
+		OrderBy("second_table.id", Asc).
+		OrderBy("third_table.id", Desc).
+		String()
+}
+
+func squirrelSelect() {
+	squirrel.Select("*").
+		From("test_table").
+		Join("second_table", "test_table.id=second_table.test_table_id").
+		LeftJoin("third_table", "second_table.third_id=third_table.id").
+		Limit(10).
+		Offset(15).
+		GroupBy("first_table.id").
+		OrderBy("second_table.id", "third_table.id").ToSql()
+}
+
+func Benchmark_SelectQuery(b *testing.B) {
+	tests := []struct {
+		name string
+		fun  func()
+	}{
+		{"qb", qbSelect},
+		{"sqirrel", squirrelSelect},
+	}
+
+	for _, test := range tests {
+		b.Run(test.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				test.fun()
+			}
+		})
+	}
+
+	for i := 0; i < b.N; i++ {
 	}
 }
