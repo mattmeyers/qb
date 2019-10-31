@@ -200,8 +200,8 @@ func (q *selectQuery) RebindWith(r Rebinder) *selectQuery {
 }
 
 func (q *selectQueryTS) String() (string, []interface{}, error) {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
+	q.mutex.RLock()
+	defer q.mutex.RUnlock()
 	return q.query.String()
 }
 func (q *selectQuery) String() (string, []interface{}, error) {
