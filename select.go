@@ -23,12 +23,12 @@ type selectQuery struct {
 	table string
 	cols  []string
 	joinClause
-	whereClause
-	limit    *int
-	offset   *int
-	groupBys []string
-	orderBys []string
-	rebinder Rebinder
+	whereClauses whereClause
+	limit        *int
+	offset       *int
+	groupBys     []string
+	orderBys     []string
+	rebinder     Rebinder
 }
 
 func SelectTS(vals ...string) *selectQueryTS {
@@ -122,27 +122,27 @@ func (q *selectQuery) CrossJoin(table, condition string) *selectQuery {
 	return q
 }
 
-func (q *selectQueryTS) Where(col, cmp string, val interface{}) *selectQueryTS {
+func (q *selectQueryTS) Where(clause QueryBuilder) *selectQueryTS {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
-	q.query.Where(col, cmp, val)
+	q.query.Where(clause)
 	return q
 }
-func (q *selectQuery) Where(col, cmp string, val interface{}) *selectQuery {
-	q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereAnd})
+func (q *selectQuery) Where(clause QueryBuilder) *selectQuery {
+	q.whereClauses.clauses = append(q.whereClauses.clauses, clause)
 	return q
 }
 
-func (q *selectQueryTS) OrWhere(col, cmp string, val interface{}) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.OrWhere(col, cmp, val)
-	return q
-}
-func (q *selectQuery) OrWhere(col, cmp string, val interface{}) *selectQuery {
-	q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereOr})
-	return q
-}
+// func (q *selectQueryTS) OrWhere(col, cmp string, val interface{}) *selectQueryTS {
+// 	q.mutex.Lock()
+// 	defer q.mutex.Unlock()
+// 	q.query.OrWhere(col, cmp, val)
+// 	return q
+// }
+// func (q *selectQuery) OrWhere(col, cmp string, val interface{}) *selectQuery {
+// 	q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereOr})
+// 	return q
+// }
 
 func (q *selectQueryTS) Limit(val int) *selectQueryTS {
 	q.mutex.Lock()
@@ -212,6 +212,7 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 	var sb strings.Builder
 	var params []interface{}
 	var where string
+	var err error
 
 	fmt.Fprintf(&sb, "SELECT %s FROM %s", strings.Join(q.cols, ", "), q.table)
 
@@ -220,8 +221,11 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 		fmt.Fprintf(&sb, " %s", j)
 	}
 
-	if len(q.clauses) > 0 {
-		where, params = q.whereClause.string()
+	if len(q.whereClauses.clauses) > 0 {
+		where, params, err = q.whereClauses.String()
+		if err != nil {
+			return "", nil, err
+		}
 		sb.WriteString(" WHERE ")
 		sb.WriteString(where)
 	}

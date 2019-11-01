@@ -12,33 +12,67 @@ const (
 	whereOr
 )
 
-type clause struct {
-	col  string
-	cmp  string
-	val  interface{}
-	link whereLink
+type Cmp struct {
+	col string
+	op  string
+	val interface{}
+}
+
+type Or []QueryBuilder
+
+type And []QueryBuilder
+
+func (o Or) String() (string, []interface{}, error) {
+	parts := make([]string, len(o))
+	params := make([]interface{}, 0, len(o))
+
+	for i, c := range o {
+		q, p, err := c.String()
+		if err != nil {
+			return "", nil, err
+		}
+		parts[i] = q
+		params = append(params, p...)
+	}
+	return fmt.Sprintf("(%s)", strings.Join(parts, " OR ")), params, nil
+}
+
+func (a And) String() (string, []interface{}, error) {
+	parts := make([]string, len(a))
+	params := make([]interface{}, 0, len(a))
+
+	for i, c := range a {
+		q, p, err := c.String()
+		if err != nil {
+			return "", nil, err
+		}
+		parts[i] = q
+		params = append(params, p...)
+	}
+	return fmt.Sprintf("(%s)", strings.Join(parts, " AND ")), params, nil
+}
+
+func (c Cmp) String() (string, []interface{}, error) {
+	return fmt.Sprintf("%s%s?", c.col, c.op), []interface{}{c.val}, nil
 }
 
 type whereClause struct {
-	clauses []clause
+	clauses []QueryBuilder
 }
 
-func (w whereClause) string() (string, []interface{}) {
+func (w whereClause) String() (string, []interface{}, error) {
 	var parts []string
 	var params []interface{}
 
-	for i, c := range w.clauses {
-		if i > 0 {
-			if c.link == whereAnd {
-				parts = append(parts, "AND")
-			} else if c.link == whereOr {
-				parts = append(parts, "OR")
-			}
+	for _, c := range w.clauses {
+		part, param, err := c.String()
+		if err != nil {
+			return "", nil, err
 		}
 
-		parts = append(parts, fmt.Sprintf("%s%s?", c.col, c.cmp))
-		params = append(params, c.val)
+		parts = append(parts, part)
+		params = append(params, param...)
 
 	}
-	return strings.Join(parts, " "), params
+	return strings.Join(parts, " AND "), params, nil
 }

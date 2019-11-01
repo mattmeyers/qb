@@ -22,12 +22,12 @@ func (q *updateQuery) Set(col string, val interface{}) *updateQuery {
 }
 
 func (q *updateQuery) Where(col, cmp string, val interface{}) *updateQuery {
-	q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereAnd})
+	// q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereAnd})
 	return q
 }
 
 func (q *updateQuery) OrWhere(col, cmp string, val interface{}) *updateQuery {
-	q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereOr})
+	// q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereOr})
 	return q
 }
 
@@ -67,12 +67,12 @@ func (q *updateQuery) string(tableRequired bool) (string, []interface{}, error) 
 	}
 	sb.WriteString(strings.Join(sets, ", "))
 
-	if len(q.clauses) > 0 {
-		sb.WriteString(" WHERE ")
-		where, wParams := q.whereClause.string()
-		params = append(params, wParams...)
-		sb.WriteString(where)
-	}
+	// if len(q.clauses) > 0 {
+	// 	sb.WriteString(" WHERE ")
+	// 	where, wParams := q.whereClause.string()
+	// 	params = append(params, wParams...)
+	// 	sb.WriteString(where)
+	// }
 
 	query := sb.String()
 

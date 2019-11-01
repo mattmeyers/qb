@@ -12,12 +12,12 @@ func DeleteFrom(table string) *deleteQuery {
 }
 
 func (q *deleteQuery) Where(col, cmp string, val interface{}) *deleteQuery {
-	q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereAnd})
+	// q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereAnd})
 	return q
 }
 
 func (q *deleteQuery) OrWhere(col, cmp string, val interface{}) *deleteQuery {
-	q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereOr})
+	// q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereOr})
 	return q
 }
 
@@ -28,16 +28,16 @@ func (q *deleteQuery) String() (string, []interface{}, error) {
 
 	var sb strings.Builder
 	var params []interface{}
-	var where string
+	// var where string
 
 	sb.WriteString("DELETE FROM ")
 	sb.WriteString(q.table)
 
-	if len(q.clauses) > 0 {
-		sb.WriteString(" WHERE ")
-		where, params = q.whereClause.string()
-		sb.WriteString(where)
-	}
+	// if len(q.clauses) > 0 {
+	// 	sb.WriteString(" WHERE ")
+	// 	where, params = q.whereClause.string()
+	// 	sb.WriteString(where)
+	// }
 
 	return sb.String(), params, nil
 }

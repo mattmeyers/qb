@@ -23,10 +23,20 @@ func Test_selectQuery_String(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "Select with where clause",
-			query:   Select("a", "b").From("test_table").Where("c", "=", "d").OrWhere("e", "<", 1).Where("f", "!=", false),
-			want:    "SELECT a, b FROM test_table WHERE c=? OR e<? AND f!=?",
-			want1:   []interface{}{"d", 1, false},
+			name: "Select with where clause",
+			query: Select("a", "b").
+				From("test_table").
+				Where(
+					Or{
+						And{
+							Cmp{"c", "=", "d"},
+							Cmp{"m", ">", 5},
+						},
+						Cmp{"e", "<", 1},
+					}).
+				Where(Cmp{"f", "!=", false}),
+			want:    "SELECT a, b FROM test_table WHERE ((c=? AND m>?) OR e<?) AND f!=?",
+			want1:   []interface{}{"d", 5, 1, false},
 			wantErr: false,
 		},
 		{
