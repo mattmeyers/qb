@@ -13,9 +13,9 @@ const (
 )
 
 type Cmp struct {
-	col string
-	op  string
-	val interface{}
+	Col string
+	Op  string
+	Val interface{}
 }
 
 type Or []QueryBuilder
@@ -53,7 +53,7 @@ func (a And) String() (string, []interface{}, error) {
 }
 
 func (c Cmp) String() (string, []interface{}, error) {
-	return fmt.Sprintf("%s%s?", c.col, c.op), []interface{}{c.val}, nil
+	return fmt.Sprintf("%s%s?", c.Col, c.Op), []interface{}{c.Val}, nil
 }
 
 type whereClause struct {

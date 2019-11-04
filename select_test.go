@@ -102,6 +102,7 @@ func qbSelect() {
 		GroupBy("first_table.id").
 		OrderBy("second_table.id", Asc).
 		OrderBy("third_table.id", Desc).
+		Where(Or{Cmp{"a", "=", "b"}, Cmp{"c", "=", "d"}}).
 		String()
 }
 
@@ -113,7 +114,9 @@ func squirrelSelect() {
 		Limit(10).
 		Offset(15).
 		GroupBy("first_table.id").
-		OrderBy("second_table.id", "third_table.id").ToSql()
+		OrderBy("second_table.id", "third_table.id").
+		Where(squirrel.Or{squirrel.Eq{"a": "b"}, squirrel.Eq{"c": "d"}}).
+		ToSql()
 }
 
 func Benchmark_SelectQuery(b *testing.B) {
