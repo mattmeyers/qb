@@ -56,6 +56,17 @@ func Select(vals ...string) *selectQuery {
 	}
 }
 
+func (q *selectQueryTS) Select(vals ...string) *selectQueryTS {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	q.query.Select(vals...)
+	return q
+}
+func (q *selectQuery) Select(vals ...string) *selectQuery {
+	q.cols = append(q.cols, vals...)
+	return q
+}
+
 func (q *selectQueryTS) From(val string) *selectQueryTS {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
