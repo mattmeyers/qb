@@ -40,6 +40,20 @@ func Test_selectQuery_String(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name:    "Nested where query",
+			query:   Select("id").From("test_table").Where(Cmp{"id", " in ", Select("id").From("second_table")}),
+			want:    "SELECT id FROM test_table WHERE id in (SELECT id FROM second_table)",
+			want1:   nil,
+			wantErr: false,
+		},
+		{
+			name:    "Having clause",
+			query:   Select("id").From("test_table").GroupBy("id").Having(Cmp{"COUNT(*)", ">", 2}),
+			want:    "SELECT id FROM test_table GROUP BY id HAVING COUNT(*)>?",
+			want1:   []interface{}{2},
+			wantErr: false,
+		},
+		{
 			name:    "Inner join",
 			query:   Select().From("test_table").InnerJoin("second_table", "test_table.id=second_table.test_table_id"),
 			want:    "SELECT * FROM test_table INNER JOIN second_table ON test_table.id=second_table.test_table_id",

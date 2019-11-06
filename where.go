@@ -53,7 +53,23 @@ func (a And) String() (string, []interface{}, error) {
 }
 
 func (c Cmp) String() (string, []interface{}, error) {
-	return fmt.Sprintf("%s%s?", c.Col, c.Op), []interface{}{c.Val}, nil
+	var q string
+	var p []interface{}
+	var err error
+
+	switch v := c.Val.(type) {
+	case QueryBuilder:
+		q, p, err = v.String()
+		if err != nil {
+			return "", nil, err
+		}
+
+		q = fmt.Sprintf("%s%s(%s)", c.Col, c.Op, q)
+	default:
+		q = fmt.Sprintf("%s%s?", c.Col, c.Op)
+		p = []interface{}{c.Val}
+	}
+	return q, p, nil
 }
 
 type whereClause struct {

@@ -23,12 +23,13 @@ type selectQuery struct {
 	table string
 	cols  []string
 	joinClause
-	whereClauses whereClause
-	limit        *int
-	offset       *int
-	groupBys     []string
-	orderBys     []string
-	rebinder     Rebinder
+	whereClauses  whereClause
+	havingClauses whereClause
+	limit         *int
+	offset        *int
+	groupBys      []string
+	orderBys      []string
+	rebinder      Rebinder
 }
 
 func SelectTS(vals ...string) *selectQueryTS {
@@ -188,6 +189,17 @@ func (q *selectQuery) GroupBy(vals ...string) *selectQuery {
 	return q
 }
 
+func (q *selectQueryTS) Having(clause QueryBuilder) *selectQueryTS {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	q.query.Having(clause)
+	return q
+}
+func (q *selectQuery) Having(clause QueryBuilder) *selectQuery {
+	q.havingClauses.clauses = append(q.havingClauses.clauses, clause)
+	return q
+}
+
 func (q *selectQueryTS) OrderBy(col string, dir OrderDir) *selectQueryTS {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
@@ -243,6 +255,17 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 
 	if len(q.groupBys) > 0 {
 		fmt.Fprintf(&sb, " GROUP BY %s", strings.Join(q.groupBys, ", "))
+	}
+
+	if len(q.havingClauses.clauses) > 0 {
+		having, p, err := q.havingClauses.String()
+		if err != nil {
+			return "", nil, err
+		}
+
+		params = append(params, p...)
+		sb.WriteString(" HAVING ")
+		sb.WriteString(having)
 	}
 
 	if len(q.orderBys) > 0 {
