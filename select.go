@@ -20,7 +20,7 @@ type selectQueryTS struct {
 }
 
 type selectQuery struct {
-	table string
+	table interface{}
 	cols  []string
 	joinClause
 	whereClauses  whereClause
@@ -68,13 +68,24 @@ func (q *selectQuery) Select(vals ...string) *selectQuery {
 	return q
 }
 
-func (q *selectQueryTS) From(val string) *selectQueryTS {
+func (q *selectQueryTS) SetCols(vals ...string) *selectQueryTS {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	q.query.SetCols(vals...)
+	return q
+}
+func (q *selectQuery) SetCols(vals ...string) *selectQuery {
+	q.cols = vals
+	return q
+}
+
+func (q *selectQueryTS) From(val interface{}) *selectQueryTS {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 	q.query.From(val)
 	return q
 }
-func (q *selectQuery) From(val string) *selectQuery {
+func (q *selectQuery) From(val interface{}) *selectQuery {
 	q.table = val
 	return q
 }
@@ -167,6 +178,17 @@ func (q *selectQuery) Limit(val int) *selectQuery {
 	return q
 }
 
+func (q *selectQueryTS) ClearLimit() *selectQueryTS {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	q.query.ClearLimit()
+	return q
+}
+func (q *selectQuery) ClearLimit() *selectQuery {
+	q.limit = nil
+	return q
+}
+
 func (q *selectQueryTS) Offset(val int) *selectQueryTS {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
@@ -175,6 +197,17 @@ func (q *selectQueryTS) Offset(val int) *selectQueryTS {
 }
 func (q *selectQuery) Offset(val int) *selectQuery {
 	q.offset = &val
+	return q
+}
+
+func (q *selectQueryTS) ClearOffset() *selectQueryTS {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+	q.query.ClearOffset()
+	return q
+}
+func (q *selectQuery) ClearOffset() *selectQuery {
+	q.offset = nil
 	return q
 }
 
@@ -237,7 +270,21 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 	var where string
 	var err error
 
-	fmt.Fprintf(&sb, "SELECT %s FROM %s", strings.Join(q.cols, ", "), q.table)
+	fmt.Fprintf(&sb, "SELECT %s", strings.Join(q.cols, ", "))
+
+	switch v := q.table.(type) {
+	case QueryBuilder:
+		s, p, err := v.String()
+		if err != nil {
+			return "", nil, err
+		}
+		params = append(params, p...)
+		fmt.Fprintf(&sb, " FROM (%s) AS t", s)
+	case string:
+		fmt.Fprintf(&sb, " FROM %s", v)
+	default:
+		return "", nil, ErrInvalidTable
+	}
 
 	if len(q.joinClause) > 0 {
 		j, _, _ := q.joinClause.String()

@@ -8,6 +8,7 @@ func (e Error) Error() string {
 
 const (
 	ErrMissingTable          = Error("no table specified")
+	ErrInvalidTable          = Error("invalid table type")
 	ErrMissingSetPairs       = Error("no set pairs provided")
 	ErrColValMismatch        = Error("the number of columns and values do not match")
 	ErrInvalidConflictTarget = Error("invalid conflict target")
