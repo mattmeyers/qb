@@ -23,6 +23,8 @@ func (c *conflictResolver) String() (string, []interface{}, error) {
 	sb.WriteString("ON CONFLICT ")
 
 	switch v := c.target.(type) {
+	case string:
+		fmt.Fprintf(&sb, "(%s)", v)
 	case TargetColumn:
 		fmt.Fprintf(&sb, "(%s)", string(v))
 	case TargetConstraint:

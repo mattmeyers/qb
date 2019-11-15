@@ -18,14 +18,21 @@ func Test_updateQuery_String(t *testing.T) {
 		{
 			name:    "Simple update",
 			query:   Update("test_table").Set("a", "b").Set("c", 1),
-			want:    "UPDATE test_table SET a=?, c=?",
+			want:    `UPDATE "test_table" SET a=?, c=?`,
 			want1:   []interface{}{"b", 1},
+			wantErr: false,
+		},
+		{
+			name:    "Update with EXCLUDED value",
+			query:   Update("test_table").Set("a", "b").Set("c", Excluded("c")),
+			want:    `UPDATE "test_table" SET a=?, c=EXCLUDED.c`,
+			want1:   []interface{}{"b"},
 			wantErr: false,
 		},
 		{
 			name:    "Update with where clause",
 			query:   Update("test_table").Set("a", "b").Set("c", 1).Where("c", "=", "d").OrWhere("e", "<", 1).Where("f", "!=", false),
-			want:    "UPDATE test_table SET a=?, c=? WHERE c=? OR e<? AND f!=?",
+			want:    `UPDATE "test_table" SET a=?, c=? WHERE c=? OR e<? AND f!=?`,
 			want1:   []interface{}{"b", 1, "d", 1, false},
 			wantErr: false,
 		},

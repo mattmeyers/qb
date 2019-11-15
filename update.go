@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+type Excluded string
+
 type updateQuery struct {
 	table    string
 	setPairs map[string]interface{}
@@ -48,7 +50,7 @@ func (q *updateQuery) string(tableRequired bool) (string, []interface{}, error) 
 	}
 
 	var sb strings.Builder
-	params := make([]interface{}, len(q.setPairs))
+	params := make([]interface{}, 0)
 
 	sb.WriteString("UPDATE ")
 
@@ -59,11 +61,15 @@ func (q *updateQuery) string(tableRequired bool) (string, []interface{}, error) 
 
 	keys := orderKeys(q.setPairs)
 
-	sets := make([]string, len(q.setPairs))
-	for i, k := range keys {
-		sets[i] = fmt.Sprintf("%s=?", k)
-		params[i] = q.setPairs[k]
-		i++
+	sets := make([]string, 0)
+	for _, k := range keys {
+		switch v := q.setPairs[k].(type) {
+		case Excluded:
+			sets = append(sets, fmt.Sprintf("%s=EXCLUDED.%s", k, v))
+		default:
+			sets = append(sets, fmt.Sprintf("%s=?", k))
+			params = append(params, q.setPairs[k])
+		}
 	}
 	sb.WriteString(strings.Join(sets, ", "))
 
