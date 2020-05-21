@@ -1,18 +1,27 @@
 package qb
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 )
 
 type QueryBuilder interface {
-	String() (string, []interface{}, error)
+	SQL() (string, []interface{}, error)
 }
 
-type Rebinder interface {
-	Rebind(string) string
+type raw struct {
+	q string
+	p []interface{}
 }
+
+func Raw(q string, p []interface{}) raw { return raw{q: q, p: p} }
+
+func (r raw) SQL() (string, []interface{}, error) { return r.q, r.p, nil }
+
+// Rebinder represents a function that can replace all `?` tokens in the query
+// with dialect specific tokens. These other tokens are dialect and driver
+// specific.
+type Rebinder func(string) string
 
 // GeneratePlaceholders generates a comma seperated list of the provided
 // symbol and places the list in parentheses. If num is less than or
@@ -26,7 +35,7 @@ func GeneratePlaceholders(symbol string, num int) string {
 	for i := 0; i < num; i++ {
 		p[i] = symbol
 	}
-	return fmt.Sprint("(", strings.Join(p, ", "), ")")
+	return "(" + strings.Join(p, ", ") + ")"
 }
 
 func orderKeys(m map[string]interface{}) []string {

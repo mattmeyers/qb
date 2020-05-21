@@ -22,8 +22,8 @@ func Test_deleteQuery_String(t *testing.T) {
 		},
 		{
 			name:    "Delete with where clause",
-			query:   DeleteFrom("test_table").Where("c", "=", "d").OrWhere("e", "<", 1).Where("f", "!=", false),
-			want:    "DELETE FROM test_table WHERE c=? OR e<? AND f!=?",
+			query:   DeleteFrom("test_table").Where(Or{Cmp{"c", "=", "d"}, Cmp{"e", "<", 1}}).Where(Cmp{"f", "!=", false}),
+			want:    "DELETE FROM test_table WHERE (c=? OR e<?) AND f!=?",
 			want1:   []interface{}{"d", 1, false},
 			wantErr: false,
 		},
@@ -34,10 +34,17 @@ func Test_deleteQuery_String(t *testing.T) {
 			want1:   nil,
 			wantErr: true,
 		},
+		{
+			name:    "Returning id",
+			query:   DeleteFrom("test_table").Where(Eq("a", false)).Returning("id"),
+			want:    "DELETE FROM test_table WHERE a=? RETURNING id",
+			want1:   []interface{}{false},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := tt.query.String()
+			got, got1, err := tt.query.SQL()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("insertQuery.String() error = %v, wantErr %v", err, tt.wantErr)
 				return

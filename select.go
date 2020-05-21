@@ -3,7 +3,6 @@ package qb
 import (
 	"fmt"
 	"strings"
-	"sync"
 )
 
 type OrderDir string
@@ -12,12 +11,6 @@ const (
 	Asc  OrderDir = "ASC"
 	Desc OrderDir = "DESC"
 )
-
-// selectQueryTS represents a thread safe version of selectQuery.
-type selectQueryTS struct {
-	mutex sync.RWMutex
-	query *selectQuery
-}
 
 type selectQuery struct {
 	table interface{}
@@ -32,20 +25,6 @@ type selectQuery struct {
 	rebinder      Rebinder
 }
 
-func SelectTS(vals ...string) *selectQueryTS {
-	if len(vals) == 0 {
-		vals = []string{"*"}
-	}
-	return &selectQueryTS{
-		mutex: sync.RWMutex{},
-		query: &selectQuery{
-			cols:     vals,
-			groupBys: make([]string, 0),
-			orderBys: make([]string, 0),
-		},
-	}
-}
-
 func Select(vals ...string) *selectQuery {
 	if len(vals) == 0 {
 		vals = []string{"*"}
@@ -57,210 +36,97 @@ func Select(vals ...string) *selectQuery {
 	}
 }
 
-func (q *selectQueryTS) Select(vals ...string) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.Select(vals...)
-	return q
-}
 func (q *selectQuery) Select(vals ...string) *selectQuery {
 	q.cols = append(q.cols, vals...)
 	return q
 }
 
-func (q *selectQueryTS) SetCols(vals ...string) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.SetCols(vals...)
-	return q
-}
 func (q *selectQuery) SetCols(vals ...string) *selectQuery {
 	q.cols = vals
 	return q
 }
 
-func (q *selectQueryTS) From(val interface{}) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.From(val)
-	return q
-}
 func (q *selectQuery) From(val interface{}) *selectQuery {
 	q.table = val
 	return q
 }
 
-func (q *selectQueryTS) InnerJoin(table, condition string) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.InnerJoin(table, condition)
-	return q
-}
 func (q *selectQuery) InnerJoin(table, condition string) *selectQuery {
 	q.joinClause = append(q.joinClause, newJoin(innerJoin, table, condition))
 	return q
 }
 
-func (q *selectQueryTS) LeftJoin(table, condition string) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.LeftJoin(table, condition)
-	return q
-}
 func (q *selectQuery) LeftJoin(table, condition string) *selectQuery {
 	q.joinClause = append(q.joinClause, newJoin(leftOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQueryTS) RightJoin(table, condition string) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.RightJoin(table, condition)
-	return q
-}
 func (q *selectQuery) RightJoin(table, condition string) *selectQuery {
 	q.joinClause = append(q.joinClause, newJoin(rightOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQueryTS) FullJoin(table, condition string) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.FullJoin(table, condition)
-	return q
-}
 func (q *selectQuery) FullJoin(table, condition string) *selectQuery {
 	q.joinClause = append(q.joinClause, newJoin(fullOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQueryTS) CrossJoin(table, condition string) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.CrossJoin(table, condition)
-	return q
-}
 func (q *selectQuery) CrossJoin(table, condition string) *selectQuery {
 	q.joinClause = append(q.joinClause, newJoin(crossJoin, table, condition))
 	return q
 }
 
-func (q *selectQueryTS) Where(clause QueryBuilder) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.Where(clause)
-	return q
-}
 func (q *selectQuery) Where(clause QueryBuilder) *selectQuery {
 	q.whereClauses.clauses = append(q.whereClauses.clauses, clause)
 	return q
 }
 
-// func (q *selectQueryTS) OrWhere(col, cmp string, val interface{}) *selectQueryTS {
-// 	q.mutex.Lock()
-// 	defer q.mutex.Unlock()
-// 	q.query.OrWhere(col, cmp, val)
-// 	return q
-// }
-// func (q *selectQuery) OrWhere(col, cmp string, val interface{}) *selectQuery {
-// 	q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereOr})
-// 	return q
-// }
-
-func (q *selectQueryTS) Limit(val int) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.Limit(val)
-	return q
-}
 func (q *selectQuery) Limit(val int) *selectQuery {
 	q.limit = &val
 	return q
 }
 
-func (q *selectQueryTS) ClearLimit() *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.ClearLimit()
-	return q
-}
 func (q *selectQuery) ClearLimit() *selectQuery {
 	q.limit = nil
 	return q
 }
 
-func (q *selectQueryTS) Offset(val int) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.Offset(val)
-	return q
-}
 func (q *selectQuery) Offset(val int) *selectQuery {
 	q.offset = &val
 	return q
 }
 
-func (q *selectQueryTS) ClearOffset() *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.ClearOffset()
-	return q
-}
 func (q *selectQuery) ClearOffset() *selectQuery {
 	q.offset = nil
 	return q
 }
 
-func (q *selectQueryTS) GroupBy(vals ...string) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.GroupBy(vals...)
-	return q
-}
 func (q *selectQuery) GroupBy(vals ...string) *selectQuery {
 	q.groupBys = append(q.groupBys, vals...)
 	return q
 }
 
-func (q *selectQueryTS) Having(clause QueryBuilder) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.Having(clause)
-	return q
-}
 func (q *selectQuery) Having(clause QueryBuilder) *selectQuery {
 	q.havingClauses.clauses = append(q.havingClauses.clauses, clause)
 	return q
 }
 
-func (q *selectQueryTS) OrderBy(col string, dir OrderDir) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.OrderBy(col, dir)
-	return q
-}
 func (q *selectQuery) OrderBy(col string, dir OrderDir) *selectQuery {
 	q.orderBys = append(q.orderBys, fmt.Sprintf("%s %s", col, dir))
 	return q
 }
 
-func (q *selectQueryTS) RebindWith(r Rebinder) *selectQueryTS {
-	q.mutex.Lock()
-	defer q.mutex.Unlock()
-	q.query.RebindWith(r)
-	return q
-}
 func (q *selectQuery) RebindWith(r Rebinder) *selectQuery {
 	q.rebinder = r
 	return q
 }
 
-func (q *selectQueryTS) String() (string, []interface{}, error) {
-	q.mutex.RLock()
-	defer q.mutex.RUnlock()
-	return q.query.String()
+func (q *selectQuery) String() string {
+	s, _, _ := q.SQL()
+	return s
 }
-func (q *selectQuery) String() (string, []interface{}, error) {
+
+func (q *selectQuery) SQL() (string, []interface{}, error) {
 	if q.table == "" {
 		return "", nil, ErrMissingTable
 	}
@@ -274,7 +140,7 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 
 	switch v := q.table.(type) {
 	case QueryBuilder:
-		s, p, err := v.String()
+		s, p, err := v.SQL()
 		if err != nil {
 			return "", nil, err
 		}
@@ -292,7 +158,7 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 	}
 
 	if len(q.whereClauses.clauses) > 0 {
-		where, params, err = q.whereClauses.String()
+		where, params, err = q.whereClauses.SQL()
 		if err != nil {
 			return "", nil, err
 		}
@@ -305,7 +171,7 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 	}
 
 	if len(q.havingClauses.clauses) > 0 {
-		having, p, err := q.havingClauses.String()
+		having, p, err := q.havingClauses.SQL()
 		if err != nil {
 			return "", nil, err
 		}
@@ -329,7 +195,7 @@ func (q *selectQuery) String() (string, []interface{}, error) {
 
 	query := sb.String()
 	if q.rebinder != nil {
-		query = q.rebinder.Rebind(query)
+		query = q.rebinder(query)
 	}
 
 	return query, params, nil

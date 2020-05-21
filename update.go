@@ -83,7 +83,7 @@ func (q *updateQuery) string(tableRequired bool) (string, []interface{}, error) 
 	query := sb.String()
 
 	if q.rebinder != nil {
-		query = q.rebinder.Rebind(query)
+		query = q.rebinder(query)
 	}
 
 	return query, params, nil

@@ -30,7 +30,7 @@ func (c *conflictResolver) String() (string, []interface{}, error) {
 	case TargetConstraint:
 		fmt.Fprintf(&sb, "ON CONSTRAINT %s", string(v))
 	case whereClause:
-		q, p, _ := v.String()
+		q, p, _ := v.SQL()
 		fmt.Fprintf(&sb, "WHERE %s", q)
 		params = append(params, p...)
 	default:

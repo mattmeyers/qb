@@ -1,5 +1,8 @@
 # qb
 
+
+## *qb is still in active development. The API is unstable. Use with caution.*
+
 `qb` is a query builder library heavily inspired by [squirrel](https://github.com/masterminds/squirrel) and [dbr](https://github.com/gocraft/dbr).  Every method returns a struct of the same type allowing an entire query to be built in one function call chain.  This library's only job is to generate properly formatted SQL queries.  It will not use a database driver to use the proper placeholders, but rather every query will use `?`s.  As such, it is the job of the user to rebind the query for their uses.
 
 Every query builder struct implements the QueryBuilder interface defined as
@@ -32,7 +35,7 @@ A select query can be initialized with the `Select(cols ...string)` function.  T
 - `Limit(val int64)`
 - `Offset(val int64)`
 
-For example, in order to generate the query 
+For example, in order to generate the query
 
 ```sql
 SELECT id FROM products WHERE item_number=? AND in_stock=? OR backordered=?
@@ -58,7 +61,7 @@ An insert query can be initialized with the `InsertInto(table string)` function.
 - `OnConflict(target, action interface{})`
 - `Returning(cols ...string)`
 
-Calling `Columns` or `Values` mulitple times will append the passed values to the columns and values arrays.  This can be handy when inserting optional columns. For example, in order to generate the query 
+Calling `Columns` or `Values` mulitple times will append the passed values to the columns and values arrays.  This can be handy when inserting optional columns. For example, in order to generate the query
 
 ```sql
 INSERT INTO products (name, qty) VALUES (?, ?)
@@ -73,7 +76,7 @@ qb.InsertInto("products").
    String()
 ```
 
-If using PostgreSQL, the `OnConflict` function can be used to generate an `ON CONFLICT target action` clause.  The provided target should be of type `TargetColumn`, `TargetConstraint`, or `whereClause`.  The provided action should be of type `ActionDoNothing` or `*updateQuery`.  For example, to generate the query 
+If using PostgreSQL, the `OnConflict` function can be used to generate an `ON CONFLICT target action` clause.  The provided target should be of type `TargetColumn`, `TargetConstraint`, or `whereClause`.  The provided action should be of type `ActionDoNothing` or `*updateQuery`.  For example, to generate the query
 
 ```sql
 INSERT INTO products (name, item_number) VALUES (?, ?) ON CONFLICT (item_number) DO UPDATE SET item_number=123
@@ -86,7 +89,7 @@ qb.InsertInto("products").
    Col("name", "Hammer").
    Col("item_number", 456).
    OnConflict(
-     qb.TargetColumn("item_number"), 
+     qb.TargetColumn("item_number"),
      qb.Update("").Set("item_number", 123),
    ).
    String()
@@ -100,7 +103,7 @@ An update query can be initialized with the `Update(table string)` function.  Th
 - `Where(col, cmp string, val interface{})`
 - `OrWhere(col, cmp string, val interface{})`
 
-Calling `Set` with the same col value will update the previous value.  For example, in order to generate the query 
+Calling `Set` with the same col value will update the previous value.  For example, in order to generate the query
 
 ```sql
 UPDATE products SET name=?, qty=? WHERE item_id=?
@@ -123,7 +126,7 @@ A delete query can be initialized with the `DeleteFrom(table string)` function. 
 - `Where(col, cmp string, val interface{})`
 - `OrWhere(col, cmp string, val interface{})`
 
-For example, in order to generate the query 
+For example, in order to generate the query
 
 ```sql
 DELETE FROM products WHERE item_number=? AND qty<? OR backordered=?

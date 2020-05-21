@@ -98,7 +98,7 @@ func (q *insertQuery) String() (string, []interface{}, error) {
 	}
 
 	if q.rebinder != nil {
-		query = q.rebinder.Rebind(query)
+		query = q.rebinder(query)
 	}
 
 	return query, params, nil

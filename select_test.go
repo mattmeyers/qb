@@ -4,7 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/masterminds/squirrel"
+	"github.com/Masterminds/squirrel"
+	"github.com/gocraft/dbr"
+	"github.com/gocraft/dbr/dialect"
 )
 
 func Test_selectQuery_String(t *testing.T) {
@@ -91,7 +93,7 @@ func Test_selectQuery_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := tt.query.String()
+			got, got1, err := tt.query.SQL()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("insertQuery.String() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -106,8 +108,14 @@ func Test_selectQuery_String(t *testing.T) {
 	}
 }
 
-func qbSelect() {
-	Select().
+func TestThis(t *testing.T) {
+	// t.Log(qbSelect())
+	t.Log(squirrelSelect())
+	// t.Log(dbrSelect())
+}
+
+func qbSelect() string {
+	return Select().
 		From("test_table").
 		InnerJoin("second_table", "test_table.id=second_table.test_table_id").
 		LeftJoin("third_table", "second_table.third_id=third_table.id").
@@ -116,12 +124,12 @@ func qbSelect() {
 		GroupBy("first_table.id").
 		OrderBy("second_table.id", Asc).
 		OrderBy("third_table.id", Desc).
-		Where(Or{Cmp{"a", "=", "b"}, Cmp{"c", "=", "d"}}).
+		Where(Or{Cmp{"a", "=", "b"}, Cmp{"c", "=", "d"}, Cmp{"e", "=", Select("id").From("sub_table").Where(Cmp{"f", "=", 1})}}).
 		String()
 }
 
-func squirrelSelect() {
-	squirrel.Select("*").
+func squirrelSelect() string {
+	q, _, _ := squirrel.Select("*").
 		From("test_table").
 		Join("second_table", "test_table.id=second_table.test_table_id").
 		LeftJoin("third_table", "second_table.third_id=third_table.id").
@@ -129,17 +137,36 @@ func squirrelSelect() {
 		Offset(15).
 		GroupBy("first_table.id").
 		OrderBy("second_table.id", "third_table.id").
-		Where(squirrel.Or{squirrel.Eq{"a": "b"}, squirrel.Eq{"c": "d"}}).
+		Where(squirrel.Or{squirrel.Eq{"a": "b", "c": "d", "e": squirrel.Select("id").From("sub_table").Where(squirrel.Eq{"f": 1})}}).
 		ToSql()
+	return q
+}
+
+func dbrSelect() string {
+	buf := dbr.NewBuffer()
+	dbr.Select("*").
+		From("test_table").
+		Join("second_table", "test_table.id=second_table.test_table_id").
+		LeftJoin("third_table", "second_table.third_id=third_table.id").
+		Limit(10).
+		Offset(15).
+		GroupBy("first_table.id").
+		OrderAsc("second_table.id").
+		OrderDesc("third_table.id").
+		Where(dbr.Or(dbr.Eq("a", "b"), dbr.Eq("c", "d"), dbr.Eq("e", "f"))).
+		Build(dialect.PostgreSQL, buf)
+	return buf.String()
+
 }
 
 func Benchmark_SelectQuery(b *testing.B) {
 	tests := []struct {
 		name string
-		fun  func()
+		fun  func() string
 	}{
 		{"qb", qbSelect},
 		{"sqirrel", squirrelSelect},
+		{"dbr", dbrSelect},
 	}
 
 	for _, test := range tests {
