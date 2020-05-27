@@ -85,7 +85,7 @@ func (q *insertQuery) Build() (string, []interface{}, error) {
 	params := vals
 
 	if q.conflictResolver != nil {
-		cQuery, p, err := q.conflictResolver.String()
+		cQuery, p, err := q.conflictResolver.Build()
 		if err != nil {
 			return "", nil, err
 		}

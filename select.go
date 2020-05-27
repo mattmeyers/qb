@@ -153,7 +153,7 @@ func (q *selectQuery) Build() (string, []interface{}, error) {
 	}
 
 	if len(q.joinClause) > 0 {
-		j, _, _ := q.joinClause.String()
+		j, _, _ := q.joinClause.Build()
 		fmt.Fprintf(&sb, " %s", j)
 	}
 
