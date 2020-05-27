@@ -22,7 +22,7 @@ func Test_deleteQuery_String(t *testing.T) {
 		},
 		{
 			name:    "Delete with where clause",
-			query:   DeleteFrom("test_table").Where(Or{Cmp{"c", "=", "d"}, Cmp{"e", "<", 1}}).Where(Cmp{"f", "!=", false}),
+			query:   DeleteFrom("test_table").Where(Or{Pred{"c", "=", "d"}, Pred{"e", "<", 1}}).Where(Pred{"f", "!=", false}),
 			want:    "DELETE FROM test_table WHERE (c=? OR e<?) AND f!=?",
 			want1:   []interface{}{"d", 1, false},
 			wantErr: false,
@@ -44,7 +44,7 @@ func Test_deleteQuery_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := tt.query.SQL()
+			got, got1, err := tt.query.Build()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("insertQuery.String() error = %v, wantErr %v", err, tt.wantErr)
 				return

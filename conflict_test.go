@@ -6,21 +6,21 @@ import (
 )
 
 func TestOnConflict(t *testing.T) {
-	q, p, err := InsertInto("test_table").Col("a", 1).OnConflict(TargetColumn("a"), ActionDoNothing).String()
+	q, p, err := InsertInto("test_table").Col("a", 1).OnConflict(TargetColumn("a"), ActionDoNothing).Build()
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(q)
 	fmt.Println(p)
 
-	q, p, err = InsertInto("test_table").Col("a", 1).OnConflict(TargetColumn("a"), Update("").Set("a", 2)).String()
+	q, p, err = InsertInto("test_table").Col("a", 1).OnConflict(TargetColumn("a"), Update("").Set("a", 2)).Build()
 	if err != nil {
 		t.Fatal(err)
 	}
 	fmt.Println(q)
 	fmt.Println(p)
 
-	q, p, err = InsertInto("test_table").Col("a", 1).OnConflict(TargetConstraint("my_constraint"), Update("").Set("b", false).Where("c", ">", 5)).String()
+	q, p, err = InsertInto("test_table").Col("a", 1).OnConflict(TargetConstraint("my_constraint"), Update("").Set("b", false).Where("c", ">", 5)).Build()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestOnConflict(t *testing.T) {
 	// 		Cmp{Col: "d", Op: "<>", Val: false},
 	// 	},
 	// }
-	// q, p, err = InsertInto("test_table").Col("a", 1).OnConflict(wClause, Update("").Set("b", false).Where("c", ">", 5)).String()
+	// q, p, err = InsertInto("test_table").Col("a", 1).OnConflict(wClause, Update("").Set("b", false).Where("c", ">", 5)).Build()
 	// if err != nil {
 	// 	t.Fatal(err)
 	// }

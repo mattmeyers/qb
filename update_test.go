@@ -31,7 +31,7 @@ func Test_updateQuery_String(t *testing.T) {
 		},
 		{
 			name:    "Update with where clause",
-			query:   Update("test_table").Set("a", "b").Set("c", 1).Where("c", "=", "d").OrWhere("e", "<", 1).Where("f", "!=", false),
+			query:   Update("test_table").Set("a", "b").Set("c", 1).Where("c", "=", "d").Where("f", "!=", false),
 			want:    `UPDATE "test_table" SET a=?, c=? WHERE c=? OR e<? AND f!=?`,
 			want1:   []interface{}{"b", 1, "d", 1, false},
 			wantErr: false,
@@ -53,7 +53,7 @@ func Test_updateQuery_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := tt.query.String()
+			got, got1, err := tt.query.Build()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("insertQuery.String() error = %v, wantErr %v", err, tt.wantErr)
 				return

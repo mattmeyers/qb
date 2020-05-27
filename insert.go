@@ -62,7 +62,7 @@ func (q *insertQuery) RebindWith(r Rebinder) *insertQuery {
 	return q
 }
 
-func (q *insertQuery) String() (string, []interface{}, error) {
+func (q *insertQuery) Build() (string, []interface{}, error) {
 	if q.table == "" {
 		return "", nil, ErrMissingTable
 	} else if q.err != nil {
@@ -102,4 +102,9 @@ func (q *insertQuery) String() (string, []interface{}, error) {
 	}
 
 	return query, params, nil
+}
+
+func (q *insertQuery) String() string {
+	query, _, _ := q.Build()
+	return query
 }

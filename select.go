@@ -76,7 +76,7 @@ func (q *selectQuery) CrossJoin(table, condition string) *selectQuery {
 	return q
 }
 
-func (q *selectQuery) Where(clause QueryBuilder) *selectQuery {
+func (q *selectQuery) Where(clause Builder) *selectQuery {
 	q.whereClauses.clauses = append(q.whereClauses.clauses, clause)
 	return q
 }
@@ -106,7 +106,7 @@ func (q *selectQuery) GroupBy(vals ...string) *selectQuery {
 	return q
 }
 
-func (q *selectQuery) Having(clause QueryBuilder) *selectQuery {
+func (q *selectQuery) Having(clause Builder) *selectQuery {
 	q.havingClauses.clauses = append(q.havingClauses.clauses, clause)
 	return q
 }
@@ -122,11 +122,11 @@ func (q *selectQuery) RebindWith(r Rebinder) *selectQuery {
 }
 
 func (q *selectQuery) String() string {
-	s, _, _ := q.SQL()
+	s, _, _ := q.Build()
 	return s
 }
 
-func (q *selectQuery) SQL() (string, []interface{}, error) {
+func (q *selectQuery) Build() (string, []interface{}, error) {
 	if q.table == "" {
 		return "", nil, ErrMissingTable
 	}
@@ -139,8 +139,8 @@ func (q *selectQuery) SQL() (string, []interface{}, error) {
 	fmt.Fprintf(&sb, "SELECT %s", strings.Join(q.cols, ", "))
 
 	switch v := q.table.(type) {
-	case QueryBuilder:
-		s, p, err := v.SQL()
+	case Builder:
+		s, p, err := v.Build()
 		if err != nil {
 			return "", nil, err
 		}
@@ -158,7 +158,7 @@ func (q *selectQuery) SQL() (string, []interface{}, error) {
 	}
 
 	if len(q.whereClauses.clauses) > 0 {
-		where, params, err = q.whereClauses.SQL()
+		where, params, err = q.whereClauses.Build()
 		if err != nil {
 			return "", nil, err
 		}
@@ -171,7 +171,7 @@ func (q *selectQuery) SQL() (string, []interface{}, error) {
 	}
 
 	if len(q.havingClauses.clauses) > 0 {
-		having, p, err := q.havingClauses.SQL()
+		having, p, err := q.havingClauses.Build()
 		if err != nil {
 			return "", nil, err
 		}

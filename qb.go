@@ -5,8 +5,8 @@ import (
 	"strings"
 )
 
-type QueryBuilder interface {
-	SQL() (string, []interface{}, error)
+type Builder interface {
+	Build() (string, []interface{}, error)
 }
 
 type raw struct {
@@ -16,7 +16,7 @@ type raw struct {
 
 func Raw(q string, p []interface{}) raw { return raw{q: q, p: p} }
 
-func (r raw) SQL() (string, []interface{}, error) { return r.q, r.p, nil }
+func (r raw) Build() (string, []interface{}, error) { return r.q, r.p, nil }
 
 // Rebinder represents a function that can replace all `?` tokens in the query
 // with dialect specific tokens. These other tokens are dialect and driver

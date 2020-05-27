@@ -14,7 +14,7 @@ func DeleteFrom(table string) *deleteQuery {
 	return &deleteQuery{table: table}
 }
 
-func (q *deleteQuery) Where(clause QueryBuilder) *deleteQuery {
+func (q *deleteQuery) Where(clause Builder) *deleteQuery {
 	q.whereClauses.clauses = append(q.whereClauses.clauses, clause)
 	return q
 }
@@ -24,7 +24,7 @@ func (q *deleteQuery) Returning(cols ...string) *deleteQuery {
 	return q
 }
 
-func (q *deleteQuery) SQL() (string, []interface{}, error) {
+func (q *deleteQuery) Build() (string, []interface{}, error) {
 	if q.table == "" {
 		return "", nil, ErrMissingTable
 	}
@@ -36,7 +36,7 @@ func (q *deleteQuery) SQL() (string, []interface{}, error) {
 	sb.WriteString(q.table)
 
 	if len(q.whereClauses.clauses) > 0 {
-		w, p, err := q.whereClauses.SQL()
+		w, p, err := q.whereClauses.Build()
 		if err != nil {
 			return "", nil, err
 		}
@@ -54,6 +54,6 @@ func (q *deleteQuery) SQL() (string, []interface{}, error) {
 }
 
 func (q *deleteQuery) String() string {
-	query, _, _ := q.SQL()
+	query, _, _ := q.Build()
 	return query
 }

@@ -93,7 +93,7 @@ func Test_selectQuery_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := tt.query.SQL()
+			got, got1, err := tt.query.Build()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("insertQuery.String() error = %v, wantErr %v", err, tt.wantErr)
 				return

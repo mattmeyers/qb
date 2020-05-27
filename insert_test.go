@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_insertQuery_String(t *testing.T) {
+func Test_insertQuery_Build(t *testing.T) {
 	tests := []struct {
 		name    string
 		query   *insertQuery
@@ -58,7 +58,7 @@ func Test_insertQuery_String(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, err := tt.query.String()
+			got, got1, err := tt.query.Build()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("insertQuery.String() error = %v, wantErr %v", err, tt.wantErr)
 				return

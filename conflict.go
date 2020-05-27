@@ -17,7 +17,7 @@ type actionDoNothing string
 
 const ActionDoNothing = actionDoNothing("NOTHING")
 
-func (c *conflictResolver) String() (string, []interface{}, error) {
+func (c *conflictResolver) Build() (string, []interface{}, error) {
 	var sb strings.Builder
 	var params []interface{}
 	sb.WriteString("ON CONFLICT ")
@@ -30,7 +30,7 @@ func (c *conflictResolver) String() (string, []interface{}, error) {
 	case TargetConstraint:
 		fmt.Fprintf(&sb, "ON CONSTRAINT %s", string(v))
 	case whereClause:
-		q, p, _ := v.SQL()
+		q, p, _ := v.Build()
 		fmt.Fprintf(&sb, "WHERE %s", q)
 		params = append(params, p...)
 	default:
@@ -43,7 +43,7 @@ func (c *conflictResolver) String() (string, []interface{}, error) {
 	case actionDoNothing:
 		sb.WriteString(string(v))
 	case *updateQuery:
-		q, p, err := v.string(false)
+		q, p, err := v.build(false)
 		if err != nil {
 			return "", nil, err
 		}

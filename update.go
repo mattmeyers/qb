@@ -28,21 +28,16 @@ func (q *updateQuery) Where(col, cmp string, val interface{}) *updateQuery {
 	return q
 }
 
-func (q *updateQuery) OrWhere(col, cmp string, val interface{}) *updateQuery {
-	// q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereOr})
-	return q
-}
-
 func (q *updateQuery) RebindWith(r Rebinder) *updateQuery {
 	q.rebinder = r
 	return q
 }
 
-func (q *updateQuery) String() (string, []interface{}, error) {
-	return q.string(true)
+func (q *updateQuery) Build() (string, []interface{}, error) {
+	return q.build(true)
 }
 
-func (q *updateQuery) string(tableRequired bool) (string, []interface{}, error) {
+func (q *updateQuery) build(tableRequired bool) (string, []interface{}, error) {
 	if q.table == "" && tableRequired {
 		return "", nil, ErrMissingTable
 	} else if len(q.setPairs) == 0 {

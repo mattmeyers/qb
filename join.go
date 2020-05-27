@@ -43,7 +43,7 @@ func newJoin(joinType joinType, table, condition string) join {
 	return join{joinType, table, condition}
 }
 
-func (jc joinClause) String() (string, []interface{}, error) {
+func (jc joinClause) Build() (string, []interface{}, error) {
 	parts := make([]string, len(jc))
 	for i, j := range jc {
 		parts[i] = fmt.Sprintf("%s %s ON %s", j.joinType.toString(), j.table, j.condition)
