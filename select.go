@@ -13,16 +13,17 @@ const (
 )
 
 type selectQuery struct {
-	table interface{}
-	cols  []string
-	joinClause
-	whereClauses  whereClause
-	havingClauses whereClause
-	limit         *int
-	offset        *int
-	groupBys      []string
-	orderBys      []string
-	rebinder      Rebinder
+	table       interface{}
+	cols        []string
+	distinct    []string
+	joins       joins
+	wherePreds  predicates
+	havingPreds predicates
+	limit       *int
+	offset      *int
+	groupBys    []string
+	orderBys    []string
+	rebinder    Rebinder
 }
 
 func Select(vals ...string) *selectQuery {
@@ -41,6 +42,14 @@ func (q *selectQuery) Select(vals ...string) *selectQuery {
 	return q
 }
 
+func (q *selectQuery) Distinct(cols ...string) *selectQuery {
+	if q.distinct == nil {
+		q.distinct = make([]string, 0)
+	}
+	q.distinct = append(q.distinct, cols...)
+	return q
+}
+
 func (q *selectQuery) SetCols(vals ...string) *selectQuery {
 	q.cols = vals
 	return q
@@ -51,33 +60,33 @@ func (q *selectQuery) From(val interface{}) *selectQuery {
 	return q
 }
 
-func (q *selectQuery) InnerJoin(table, condition string) *selectQuery {
-	q.joinClause = append(q.joinClause, newJoin(innerJoin, table, condition))
+func (q *selectQuery) InnerJoin(table string, condition interface{}) *selectQuery {
+	q.joins = append(q.joins, newJoin(innerJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) LeftJoin(table, condition string) *selectQuery {
-	q.joinClause = append(q.joinClause, newJoin(leftOuterJoin, table, condition))
+func (q *selectQuery) LeftJoin(table string, condition interface{}) *selectQuery {
+	q.joins = append(q.joins, newJoin(leftOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) RightJoin(table, condition string) *selectQuery {
-	q.joinClause = append(q.joinClause, newJoin(rightOuterJoin, table, condition))
+func (q *selectQuery) RightJoin(table string, condition interface{}) *selectQuery {
+	q.joins = append(q.joins, newJoin(rightOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) FullJoin(table, condition string) *selectQuery {
-	q.joinClause = append(q.joinClause, newJoin(fullOuterJoin, table, condition))
+func (q *selectQuery) FullJoin(table string, condition interface{}) *selectQuery {
+	q.joins = append(q.joins, newJoin(fullOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) CrossJoin(table, condition string) *selectQuery {
-	q.joinClause = append(q.joinClause, newJoin(crossJoin, table, condition))
+func (q *selectQuery) CrossJoin(table string, condition interface{}) *selectQuery {
+	q.joins = append(q.joins, newJoin(crossJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) Where(clause Builder) *selectQuery {
-	q.whereClauses.clauses = append(q.whereClauses.clauses, clause)
+func (q *selectQuery) Where(pred Builder) *selectQuery {
+	q.wherePreds = append(q.wherePreds, pred)
 	return q
 }
 
@@ -106,8 +115,8 @@ func (q *selectQuery) GroupBy(vals ...string) *selectQuery {
 	return q
 }
 
-func (q *selectQuery) Having(clause Builder) *selectQuery {
-	q.havingClauses.clauses = append(q.havingClauses.clauses, clause)
+func (q *selectQuery) Having(pred Builder) *selectQuery {
+	q.havingPreds = append(q.havingPreds, pred)
 	return q
 }
 
@@ -136,7 +145,13 @@ func (q *selectQuery) Build() (string, []interface{}, error) {
 	var where string
 	var err error
 
-	fmt.Fprintf(&sb, "SELECT %s", strings.Join(q.cols, ", "))
+	sb.WriteString("SELECT ")
+	if len(q.distinct) > 0 {
+		fmt.Fprintf(&sb, "DISTINCT ON (%s) ", strings.Join(q.distinct, ", "))
+	} else if q.distinct != nil {
+		sb.WriteString("DISTINCT ")
+	}
+	sb.WriteString(strings.Join(q.cols, ", "))
 
 	switch v := q.table.(type) {
 	case Builder:
@@ -152,13 +167,13 @@ func (q *selectQuery) Build() (string, []interface{}, error) {
 		return "", nil, ErrInvalidTable
 	}
 
-	if len(q.joinClause) > 0 {
-		j, _, _ := q.joinClause.Build()
+	if len(q.joins) > 0 {
+		j, _, _ := q.joins.Build()
 		fmt.Fprintf(&sb, " %s", j)
 	}
 
-	if len(q.whereClauses.clauses) > 0 {
-		where, params, err = q.whereClauses.Build()
+	if len(q.wherePreds) > 0 {
+		where, params, err = q.wherePreds.Build()
 		if err != nil {
 			return "", nil, err
 		}
@@ -170,8 +185,8 @@ func (q *selectQuery) Build() (string, []interface{}, error) {
 		fmt.Fprintf(&sb, " GROUP BY %s", strings.Join(q.groupBys, ", "))
 	}
 
-	if len(q.havingClauses.clauses) > 0 {
-		having, p, err := q.havingClauses.Build()
+	if len(q.havingPreds) > 0 {
+		having, p, err := q.havingPreds.Build()
 		if err != nil {
 			return "", nil, err
 		}
@@ -195,7 +210,7 @@ func (q *selectQuery) Build() (string, []interface{}, error) {
 
 	query := sb.String()
 	if q.rebinder != nil {
-		query = q.rebinder(query)
+		query = q.rebinder.Rebind(query)
 	}
 
 	return query, params, nil

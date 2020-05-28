@@ -5,17 +5,17 @@ import (
 )
 
 type deleteQuery struct {
-	table        string
-	whereClauses whereClause
-	returning    []string
+	table      string
+	wherePreds predicates
+	returning  []string
 }
 
 func DeleteFrom(table string) *deleteQuery {
 	return &deleteQuery{table: table}
 }
 
-func (q *deleteQuery) Where(clause Builder) *deleteQuery {
-	q.whereClauses.clauses = append(q.whereClauses.clauses, clause)
+func (q *deleteQuery) Where(pred Builder) *deleteQuery {
+	q.wherePreds = append(q.wherePreds, pred)
 	return q
 }
 
@@ -35,8 +35,8 @@ func (q *deleteQuery) Build() (string, []interface{}, error) {
 	sb.WriteString("DELETE FROM ")
 	sb.WriteString(q.table)
 
-	if len(q.whereClauses.clauses) > 0 {
-		w, p, err := q.whereClauses.Build()
+	if len(q.wherePreds) > 0 {
+		w, p, err := q.wherePreds.Build()
 		if err != nil {
 			return "", nil, err
 		}

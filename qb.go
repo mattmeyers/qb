@@ -21,7 +21,9 @@ func (r raw) Build() (string, []interface{}, error) { return r.q, r.p, nil }
 // Rebinder represents a function that can replace all `?` tokens in the query
 // with dialect specific tokens. These other tokens are dialect and driver
 // specific.
-type Rebinder func(string) string
+type Rebinder interface {
+	Rebind(string) string
+}
 
 // GeneratePlaceholders generates a comma seperated list of the provided
 // symbol and places the list in parentheses. If num is less than or

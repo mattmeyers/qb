@@ -15,7 +15,7 @@ const (
 	crossJoin
 )
 
-func (jt joinType) toString() string {
+func (jt joinType) String() string {
 	switch jt {
 	case innerJoin:
 		return "INNER JOIN"
@@ -34,19 +34,32 @@ func (jt joinType) toString() string {
 type join struct {
 	joinType  joinType
 	table     string
-	condition string
+	condition interface{}
 }
 
-type joinClause []join
+type joins []join
 
-func newJoin(joinType joinType, table, condition string) join {
+func newJoin(joinType joinType, table string, condition interface{}) join {
 	return join{joinType, table, condition}
 }
 
-func (jc joinClause) Build() (string, []interface{}, error) {
+func (jc joins) Build() (string, []interface{}, error) {
 	parts := make([]string, len(jc))
+	var params []interface{}
 	for i, j := range jc {
-		parts[i] = fmt.Sprintf("%s %s ON %s", j.joinType.toString(), j.table, j.condition)
+		switch v := j.condition.(type) {
+		case string:
+			parts[i] = fmt.Sprintf("%s %s ON %s", j.joinType.String(), j.table, v)
+		case Builder:
+			q, p, err := v.Build()
+			if err != nil {
+				return "", nil, err
+			}
+			parts[i] = fmt.Sprintf("%s %s ON %s", j.joinType.String(), j.table, q)
+			params = append(params, p...)
+		default:
+			return "", nil, ErrInvalidType
+		}
 	}
-	return strings.Join(parts, " "), nil, nil
+	return strings.Join(parts, " "), params, nil
 }

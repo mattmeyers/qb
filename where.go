@@ -94,15 +94,13 @@ func (c Pred) Build() (q string, p []interface{}, err error) {
 	return q, p, nil
 }
 
-type whereClause struct {
-	clauses []Builder
-}
+type predicates []Builder
 
-func (w whereClause) Build() (string, []interface{}, error) {
+func (w predicates) Build() (string, []interface{}, error) {
 	var parts []string
 	var params []interface{}
 
-	for _, c := range w.clauses {
+	for _, c := range w {
 		part, param, err := c.Build()
 		if err != nil {
 			return "", nil, err

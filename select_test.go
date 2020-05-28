@@ -31,26 +31,26 @@ func Test_selectQuery_String(t *testing.T) {
 				Where(
 					Or{
 						And{
-							Cmp{"c", "=", "d"},
-							Cmp{"m", ">", 5},
+							Pred{"c", "=", "d"},
+							Pred{"m", ">", 5},
 						},
-						Cmp{"e", "<", 1},
+						Pred{"e", "<", 1},
 					}).
-				Where(Cmp{"f", "!=", false}),
+				Where(Pred{"f", "!=", false}),
 			want:    "SELECT a, b FROM test_table WHERE ((c=? AND m>?) OR e<?) AND f!=?",
 			want1:   []interface{}{"d", 5, 1, false},
 			wantErr: false,
 		},
 		{
 			name:    "Nested where query",
-			query:   Select("id").From("test_table").Where(Cmp{"id", " in ", Select("id").From("second_table")}),
+			query:   Select("id").From("test_table").Where(Pred{"id", " in ", Select("id").From("second_table")}),
 			want:    "SELECT id FROM test_table WHERE id in (SELECT id FROM second_table)",
 			want1:   nil,
 			wantErr: false,
 		},
 		{
 			name:    "Having clause",
-			query:   Select("id").From("test_table").GroupBy("id").Having(Cmp{"COUNT(*)", ">", 2}),
+			query:   Select("id").From("test_table").GroupBy("id").Having(Pred{"COUNT(*)", ">", 2}),
 			want:    "SELECT id FROM test_table GROUP BY id HAVING COUNT(*)>?",
 			want1:   []interface{}{2},
 			wantErr: false,
@@ -90,6 +90,27 @@ func Test_selectQuery_String(t *testing.T) {
 			want1:   nil,
 			wantErr: true,
 		},
+		{
+			name:    "Select distinct",
+			query:   Select("a", "b").Distinct().From("test_table"),
+			want:    "SELECT DISTINCT a, b FROM test_table",
+			want1:   nil,
+			wantErr: false,
+		},
+		{
+			name:    "Select distinct on",
+			query:   Select("a", "b", "c").Distinct("a").From("test_table").Distinct("b"),
+			want:    "SELECT DISTINCT ON (a, b) a, b, c FROM test_table",
+			want1:   nil,
+			wantErr: false,
+		},
+		// {
+		// 	name:    "Select from derived table",
+		// 	query:   Select(""),
+		// 	want:    "",
+		// 	want1:   nil,
+		// 	wantErr: true,
+		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -124,7 +145,7 @@ func qbSelect() string {
 		GroupBy("first_table.id").
 		OrderBy("second_table.id", Asc).
 		OrderBy("third_table.id", Desc).
-		Where(Or{Cmp{"a", "=", "b"}, Cmp{"c", "=", "d"}, Cmp{"e", "=", Select("id").From("sub_table").Where(Cmp{"f", "=", 1})}}).
+		Where(Or{Pred{"a", "=", "b"}, Pred{"c", "=", "d"}, Pred{"e", "=", Select("id").From("sub_table").Where(Pred{"f", "=", 1})}}).
 		String()
 }
 

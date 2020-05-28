@@ -8,10 +8,10 @@ import (
 type Excluded string
 
 type updateQuery struct {
-	table    string
-	setPairs map[string]interface{}
-	whereClause
-	rebinder Rebinder
+	table      string
+	setPairs   map[string]interface{}
+	wherePreds predicates
+	rebinder   Rebinder
 }
 
 func Update(table string) *updateQuery {
@@ -23,8 +23,8 @@ func (q *updateQuery) Set(col string, val interface{}) *updateQuery {
 	return q
 }
 
-func (q *updateQuery) Where(col, cmp string, val interface{}) *updateQuery {
-	// q.clauses = append(q.clauses, clause{col: col, cmp: cmp, val: val, link: whereAnd})
+func (q *updateQuery) Where(pred Builder) *updateQuery {
+	q.wherePreds = append(q.wherePreds, pred)
 	return q
 }
 
@@ -68,17 +68,20 @@ func (q *updateQuery) build(tableRequired bool) (string, []interface{}, error) {
 	}
 	sb.WriteString(strings.Join(sets, ", "))
 
-	// if len(q.clauses) > 0 {
-	// 	sb.WriteString(" WHERE ")
-	// 	where, wParams := q.whereClause.string()
-	// 	params = append(params, wParams...)
-	// 	sb.WriteString(where)
-	// }
+	if len(q.wherePreds) > 0 {
+		q, p, err := q.wherePreds.Build()
+		if err != nil {
+			return "", nil, err
+		}
+		sb.WriteString(" WHERE ")
+		sb.WriteString(q)
+		params = append(params, p...)
+	}
 
 	query := sb.String()
 
 	if q.rebinder != nil {
-		query = q.rebinder(query)
+		query = q.rebinder.Rebind(query)
 	}
 
 	return query, params, nil

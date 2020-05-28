@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-// Because we're storing setPairs in a map, the order of the sets doesn't remain the same.
-// If these tests fail, check manually. They're probably fine.
 func Test_updateQuery_String(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -31,9 +29,9 @@ func Test_updateQuery_String(t *testing.T) {
 		},
 		{
 			name:    "Update with where clause",
-			query:   Update("test_table").Set("a", "b").Set("c", 1).Where("c", "=", "d").Where("f", "!=", false),
-			want:    `UPDATE "test_table" SET a=?, c=? WHERE c=? OR e<? AND f!=?`,
-			want1:   []interface{}{"b", 1, "d", 1, false},
+			query:   Update("test_table").Set("a", "b").Set("c", 1).Where(Eq("c", "d")).Where(Neq("f", false)),
+			want:    `UPDATE "test_table" SET a=?, c=? WHERE c=? AND f!=?`,
+			want1:   []interface{}{"b", 1, "d", false},
 			wantErr: false,
 		},
 		{

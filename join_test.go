@@ -8,21 +8,21 @@ import (
 func Test_joinClause_String(t *testing.T) {
 	tests := []struct {
 		name    string
-		jc      joinClause
+		jc      joins
 		want    string
 		want1   []interface{}
 		wantErr bool
 	}{
 		{
 			name:    "Single inner join",
-			jc:      joinClause{join{innerJoin, "b", "a.id=b.a_id"}},
+			jc:      joins{join{innerJoin, "b", "a.id=b.a_id"}},
 			want:    "INNER JOIN b ON a.id=b.a_id",
 			want1:   nil,
 			wantErr: false,
 		},
 		{
 			name: "Multiple inner joins",
-			jc: joinClause{
+			jc: joins{
 				join{innerJoin, "b", "a.id=b.a_id"},
 				join{innerJoin, "c", "b.id=c.b_id"},
 			},

@@ -29,7 +29,7 @@ func (c *conflictResolver) Build() (string, []interface{}, error) {
 		fmt.Fprintf(&sb, "(%s)", string(v))
 	case TargetConstraint:
 		fmt.Fprintf(&sb, "ON CONSTRAINT %s", string(v))
-	case whereClause:
+	case predicates:
 		q, p, _ := v.Build()
 		fmt.Fprintf(&sb, "WHERE %s", q)
 		params = append(params, p...)

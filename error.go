@@ -13,4 +13,5 @@ const (
 	ErrColValMismatch        = Error("the number of columns and values do not match")
 	ErrInvalidConflictTarget = Error("invalid conflict target")
 	ErrInvalidConflictAction = Error("invalid conflict action")
+	ErrInvalidType           = Error("invalid type")
 )
