@@ -9,6 +9,10 @@ type Builder interface {
 	Build() (string, []interface{}, error)
 }
 
+type S string
+
+func (s S) Build() (string, []interface{}, error) { return string(s), nil, nil }
+
 type raw struct {
 	q string
 	p []interface{}

@@ -15,7 +15,7 @@ func Test_joinClause_String(t *testing.T) {
 	}{
 		{
 			name:    "Single inner join",
-			jc:      joins{join{innerJoin, "b", "a.id=b.a_id"}},
+			jc:      joins{join{innerJoin, "b", S("a.id=b.a_id")}},
 			want:    "INNER JOIN b ON a.id=b.a_id",
 			want1:   nil,
 			wantErr: false,
@@ -23,8 +23,8 @@ func Test_joinClause_String(t *testing.T) {
 		{
 			name: "Multiple inner joins",
 			jc: joins{
-				join{innerJoin, "b", "a.id=b.a_id"},
-				join{innerJoin, "c", "b.id=c.b_id"},
+				join{innerJoin, "b", S("a.id=b.a_id")},
+				join{innerJoin, "c", S("b.id=c.b_id")},
 			},
 			want:    "INNER JOIN b ON a.id=b.a_id INNER JOIN c ON b.id=c.b_id",
 			want1:   nil,

@@ -34,12 +34,12 @@ func (jt joinType) String() string {
 type join struct {
 	joinType  joinType
 	table     string
-	condition interface{}
+	condition Builder
 }
 
 type joins []join
 
-func newJoin(joinType joinType, table string, condition interface{}) join {
+func newJoin(joinType joinType, table string, condition Builder) join {
 	return join{joinType, table, condition}
 }
 
@@ -47,19 +47,12 @@ func (jc joins) Build() (string, []interface{}, error) {
 	parts := make([]string, len(jc))
 	var params []interface{}
 	for i, j := range jc {
-		switch v := j.condition.(type) {
-		case string:
-			parts[i] = fmt.Sprintf("%s %s ON %s", j.joinType.String(), j.table, v)
-		case Builder:
-			q, p, err := v.Build()
-			if err != nil {
-				return "", nil, err
-			}
-			parts[i] = fmt.Sprintf("%s %s ON %s", j.joinType.String(), j.table, q)
-			params = append(params, p...)
-		default:
-			return "", nil, ErrInvalidType
+		q, p, err := j.condition.Build()
+		if err != nil {
+			return "", nil, err
 		}
+		parts[i] = fmt.Sprintf("%s %s ON %s", j.joinType.String(), j.table, q)
+		params = append(params, p...)
 	}
 	return strings.Join(parts, " "), params, nil
 }

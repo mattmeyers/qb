@@ -19,7 +19,7 @@ func Test_selectQuery_String(t *testing.T) {
 	}{
 		{
 			name:    "Select *",
-			query:   Select().From("test_table"),
+			query:   Select().From(S("test_table")),
 			want:    "SELECT * FROM test_table",
 			want1:   nil,
 			wantErr: false,
@@ -27,7 +27,7 @@ func Test_selectQuery_String(t *testing.T) {
 		{
 			name: "Select with where clause",
 			query: Select("a", "b").
-				From("test_table").
+				From(S("test_table")).
 				Where(
 					Or{
 						And{
@@ -43,42 +43,42 @@ func Test_selectQuery_String(t *testing.T) {
 		},
 		{
 			name:    "Nested where query",
-			query:   Select("id").From("test_table").Where(Pred{"id", " in ", Select("id").From("second_table")}),
+			query:   Select("id").From(S("test_table")).Where(Pred{"id", " in ", Select("id").From(S("second_table"))}),
 			want:    "SELECT id FROM test_table WHERE id in (SELECT id FROM second_table)",
 			want1:   nil,
 			wantErr: false,
 		},
 		{
 			name:    "Having clause",
-			query:   Select("id").From("test_table").GroupBy("id").Having(Pred{"COUNT(*)", ">", 2}),
+			query:   Select("id").From(S("test_table")).GroupBy("id").Having(Pred{"COUNT(*)", ">", 2}),
 			want:    "SELECT id FROM test_table GROUP BY id HAVING COUNT(*)>?",
 			want1:   []interface{}{2},
 			wantErr: false,
 		},
 		{
 			name:    "Inner join",
-			query:   Select().From("test_table").InnerJoin("second_table", "test_table.id=second_table.test_table_id"),
+			query:   Select().From(S("test_table")).InnerJoin("second_table", S("test_table.id=second_table.test_table_id")),
 			want:    "SELECT * FROM test_table INNER JOIN second_table ON test_table.id=second_table.test_table_id",
 			want1:   nil,
 			wantErr: false,
 		},
 		{
 			name:    "Limit and offset",
-			query:   Select("a", "b").From("test_table").Limit(10).Offset(20),
+			query:   Select("a", "b").From(S("test_table")).Limit(10).Offset(20),
 			want:    "SELECT a, b FROM test_table LIMIT 10 OFFSET 20",
 			want1:   nil,
 			wantErr: false,
 		},
 		{
 			name:    "Group by",
-			query:   Select("a", "b").From("test_table").GroupBy("a", "b"),
+			query:   Select("a", "b").From(S("test_table")).GroupBy("a", "b"),
 			want:    "SELECT a, b FROM test_table GROUP BY a, b",
 			want1:   nil,
 			wantErr: false,
 		},
 		{
 			name:    "Order by",
-			query:   Select("a", "b").From("test_table").OrderBy("a", Asc).OrderBy("b", Desc),
+			query:   Select("a", "b").From(S("test_table")).OrderBy("a", Asc).OrderBy("b", Desc),
 			want:    "SELECT a, b FROM test_table ORDER BY a ASC, b DESC",
 			want1:   nil,
 			wantErr: false,
@@ -92,14 +92,14 @@ func Test_selectQuery_String(t *testing.T) {
 		},
 		{
 			name:    "Select distinct",
-			query:   Select("a", "b").Distinct().From("test_table"),
+			query:   Select("a", "b").Distinct().From(S("test_table")),
 			want:    "SELECT DISTINCT a, b FROM test_table",
 			want1:   nil,
 			wantErr: false,
 		},
 		{
 			name:    "Select distinct on",
-			query:   Select("a", "b", "c").Distinct("a").From("test_table").Distinct("b"),
+			query:   Select("a", "b", "c").Distinct("a").From(S("test_table")).Distinct("b"),
 			want:    "SELECT DISTINCT ON (a, b) a, b, c FROM test_table",
 			want1:   nil,
 			wantErr: false,
@@ -137,15 +137,15 @@ func TestThis(t *testing.T) {
 
 func qbSelect() string {
 	return Select().
-		From("test_table").
-		InnerJoin("second_table", "test_table.id=second_table.test_table_id").
-		LeftJoin("third_table", "second_table.third_id=third_table.id").
+		From(S("test_table")).
+		InnerJoin("second_table", S("test_table.id=second_table.test_table_id")).
+		LeftJoin("third_table", S("second_table.third_id=third_table.id")).
 		Limit(10).
 		Offset(15).
 		GroupBy("first_table.id").
 		OrderBy("second_table.id", Asc).
 		OrderBy("third_table.id", Desc).
-		Where(Or{Pred{"a", "=", "b"}, Pred{"c", "=", "d"}, Pred{"e", "=", Select("id").From("sub_table").Where(Pred{"f", "=", 1})}}).
+		Where(Or{Pred{"a", "=", "b"}, Pred{"c", "=", "d"}, Pred{"e", "=", Select("id").From(S("sub_table")).Where(Pred{"f", "=", 1})}}).
 		String()
 }
 

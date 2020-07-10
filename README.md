@@ -29,21 +29,22 @@ Queries are built using unexported structs.  Therefore, methods should be chaine
 
 A select query can be initialized with the `Select(cols ...string)` function.  The struct returned from this function call can then call the following functions:
 
-- `Select(vals ...string) *selectQuery`
-- `SetCols(vals ...string) *selectQuery`
-- `From(val interface{}) *selectQuery`
-- `InnerJoin(table, condition string) *selectQuery`
-- `LeftJoin(table, condition string) *selectQuery`
-- `RightJoin(table, condition string) *selectQuery`
-- `FullJoin(table, condition string) *selectQuery`
-- `CrossJoin(table, condition string) *selectQuery`
-- `Where(clause Builder) *selectQuery`
-- `Limit(val int) *selectQuery`
+- `Select(cols ...string) *selectQuery`
+- `Distinct(cols ...string) *selectQuery`
+- `SetCols(cols ...string) *selectQuery`
+- `From(table interface{}) *selectQuery`
+- `InnerJoin(table string, condition interface{}) *selectQuery`
+- `LeftJoin(table string, condition interface{}) *selectQuery`
+- `RightJoin(table string, condition interface{}) *selectQuery`
+- `FullJoin(table string, condition interface{}) *selectQuery`
+- `CrossJoin(table string, condition interface{}) *selectQuery`
+- `Where(pred Builder) *selectQuery`
+- `Limit(l int) *selectQuery`
 - `ClearLimit() *selectQuery`
-- `Offset(val int) *selectQuery`
+- `Offset(o int) *selectQuery`
 - `ClearOffset() *selectQuery`
-- `GroupBy(vals ...string) *selectQuery`
-- `Having(clause Builder) *selectQuery`
+- `GroupBy(cols ...string) *selectQuery`
+- `Having(pred Builder) *selectQuery`
 - `OrderBy(col string, dir OrderDir) *selectQuery`
 - `RebindWith(r Rebinder) *selectQuery`
 - `String() string`
@@ -63,8 +64,8 @@ qb.Select("id", "display_name").
    From("products").
    Where("item_number", "=", "a123").
    Where(qb.Or{
-      qb.Eq("item_number", "=", "a123"),
-      qb.Eq("item_number", "=", "b456"),
+      qb.Eq("item_number", "a123"),
+      qb.Eq("item_number", "b456"),
    }).
    Where(qb.Eq("backordered", false)),
    Build()

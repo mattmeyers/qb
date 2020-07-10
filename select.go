@@ -13,7 +13,7 @@ const (
 )
 
 type selectQuery struct {
-	table       interface{}
+	table       Builder
 	cols        []string
 	distinct    []string
 	joins       joins
@@ -26,19 +26,19 @@ type selectQuery struct {
 	rebinder    Rebinder
 }
 
-func Select(vals ...string) *selectQuery {
-	if len(vals) == 0 {
-		vals = []string{"*"}
+func Select(cols ...string) *selectQuery {
+	if len(cols) == 0 {
+		cols = []string{"*"}
 	}
 	return &selectQuery{
-		cols:     vals,
+		cols:     cols,
 		groupBys: make([]string, 0),
 		orderBys: make([]string, 0),
 	}
 }
 
-func (q *selectQuery) Select(vals ...string) *selectQuery {
-	q.cols = append(q.cols, vals...)
+func (q *selectQuery) Select(cols ...string) *selectQuery {
+	q.cols = append(q.cols, cols...)
 	return q
 }
 
@@ -50,37 +50,37 @@ func (q *selectQuery) Distinct(cols ...string) *selectQuery {
 	return q
 }
 
-func (q *selectQuery) SetCols(vals ...string) *selectQuery {
-	q.cols = vals
+func (q *selectQuery) SetCols(cols ...string) *selectQuery {
+	q.cols = cols
 	return q
 }
 
-func (q *selectQuery) From(val interface{}) *selectQuery {
-	q.table = val
+func (q *selectQuery) From(table Builder) *selectQuery {
+	q.table = table
 	return q
 }
 
-func (q *selectQuery) InnerJoin(table string, condition interface{}) *selectQuery {
+func (q *selectQuery) InnerJoin(table string, condition Builder) *selectQuery {
 	q.joins = append(q.joins, newJoin(innerJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) LeftJoin(table string, condition interface{}) *selectQuery {
+func (q *selectQuery) LeftJoin(table string, condition Builder) *selectQuery {
 	q.joins = append(q.joins, newJoin(leftOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) RightJoin(table string, condition interface{}) *selectQuery {
+func (q *selectQuery) RightJoin(table string, condition Builder) *selectQuery {
 	q.joins = append(q.joins, newJoin(rightOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) FullJoin(table string, condition interface{}) *selectQuery {
+func (q *selectQuery) FullJoin(table string, condition Builder) *selectQuery {
 	q.joins = append(q.joins, newJoin(fullOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) CrossJoin(table string, condition interface{}) *selectQuery {
+func (q *selectQuery) CrossJoin(table string, condition Builder) *selectQuery {
 	q.joins = append(q.joins, newJoin(crossJoin, table, condition))
 	return q
 }
@@ -90,8 +90,8 @@ func (q *selectQuery) Where(pred Builder) *selectQuery {
 	return q
 }
 
-func (q *selectQuery) Limit(val int) *selectQuery {
-	q.limit = &val
+func (q *selectQuery) Limit(l int) *selectQuery {
+	q.limit = &l
 	return q
 }
 
@@ -100,8 +100,8 @@ func (q *selectQuery) ClearLimit() *selectQuery {
 	return q
 }
 
-func (q *selectQuery) Offset(val int) *selectQuery {
-	q.offset = &val
+func (q *selectQuery) Offset(o int) *selectQuery {
+	q.offset = &o
 	return q
 }
 
@@ -110,8 +110,8 @@ func (q *selectQuery) ClearOffset() *selectQuery {
 	return q
 }
 
-func (q *selectQuery) GroupBy(vals ...string) *selectQuery {
-	q.groupBys = append(q.groupBys, vals...)
+func (q *selectQuery) GroupBy(cols ...string) *selectQuery {
+	q.groupBys = append(q.groupBys, cols...)
 	return q
 }
 
@@ -136,7 +136,7 @@ func (q *selectQuery) String() string {
 }
 
 func (q *selectQuery) Build() (string, []interface{}, error) {
-	if q.table == "" {
+	if q.table == nil {
 		return "", nil, ErrMissingTable
 	}
 
@@ -154,6 +154,9 @@ func (q *selectQuery) Build() (string, []interface{}, error) {
 	sb.WriteString(strings.Join(q.cols, ", "))
 
 	switch v := q.table.(type) {
+	case S:
+		s, _, _ := v.Build()
+		fmt.Fprintf(&sb, " FROM %s", s)
 	case Builder:
 		s, p, err := v.Build()
 		if err != nil {
@@ -161,8 +164,6 @@ func (q *selectQuery) Build() (string, []interface{}, error) {
 		}
 		params = append(params, p...)
 		fmt.Fprintf(&sb, " FROM (%s) AS t", s)
-	case string:
-		fmt.Fprintf(&sb, " FROM %s", v)
 	default:
 		return "", nil, ErrInvalidTable
 	}
