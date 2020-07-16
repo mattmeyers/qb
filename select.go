@@ -12,37 +12,39 @@ const (
 	Desc OrderDir = "DESC"
 )
 
-type selectQuery struct {
-	table       Builder
-	cols        []string
-	distinct    []string
-	joins       joins
-	wherePreds  predicates
-	havingPreds predicates
-	limit       *int
-	offset      *int
-	groupBys    []string
-	orderBys    []string
-	rebinder    Rebinder
+type SelectQuery struct {
+	table        string
+	fromSub      *SelectQuery
+	fromSubAlias string
+	cols         []string
+	distinct     []string
+	joins        joins
+	wherePreds   predicates
+	havingPreds  predicates
+	limit        *int
+	offset       *int
+	groupBys     []string
+	orderBys     []string
+	rebinder     Rebinder
 }
 
-func Select(cols ...string) *selectQuery {
+func Select(cols ...string) *SelectQuery {
 	if len(cols) == 0 {
 		cols = []string{"*"}
 	}
-	return &selectQuery{
+	return &SelectQuery{
 		cols:     cols,
 		groupBys: make([]string, 0),
 		orderBys: make([]string, 0),
 	}
 }
 
-func (q *selectQuery) Select(cols ...string) *selectQuery {
+func (q *SelectQuery) Select(cols ...string) *SelectQuery {
 	q.cols = append(q.cols, cols...)
 	return q
 }
 
-func (q *selectQuery) Distinct(cols ...string) *selectQuery {
+func (q *SelectQuery) Distinct(cols ...string) *SelectQuery {
 	if q.distinct == nil {
 		q.distinct = make([]string, 0)
 	}
@@ -50,93 +52,104 @@ func (q *selectQuery) Distinct(cols ...string) *selectQuery {
 	return q
 }
 
-func (q *selectQuery) SetCols(cols ...string) *selectQuery {
+func (q *SelectQuery) SetCols(cols ...string) *SelectQuery {
 	q.cols = cols
 	return q
 }
 
-func (q *selectQuery) From(table Builder) *selectQuery {
+func (q *SelectQuery) From(table string) *SelectQuery {
 	q.table = table
 	return q
 }
 
-func (q *selectQuery) InnerJoin(table string, condition Builder) *selectQuery {
+func (q *SelectQuery) FromSub(query *SelectQuery, alias string) *SelectQuery {
+	q.fromSub = query
+
+	if alias == "" {
+		alias = "from_sub"
+	}
+	q.fromSubAlias = alias
+
+	return q
+}
+
+func (q *SelectQuery) InnerJoin(table string, condition Builder) *SelectQuery {
 	q.joins = append(q.joins, newJoin(innerJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) LeftJoin(table string, condition Builder) *selectQuery {
+func (q *SelectQuery) LeftJoin(table string, condition Builder) *SelectQuery {
 	q.joins = append(q.joins, newJoin(leftOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) RightJoin(table string, condition Builder) *selectQuery {
+func (q *SelectQuery) RightJoin(table string, condition Builder) *SelectQuery {
 	q.joins = append(q.joins, newJoin(rightOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) FullJoin(table string, condition Builder) *selectQuery {
+func (q *SelectQuery) FullJoin(table string, condition Builder) *SelectQuery {
 	q.joins = append(q.joins, newJoin(fullOuterJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) CrossJoin(table string, condition Builder) *selectQuery {
+func (q *SelectQuery) CrossJoin(table string, condition Builder) *SelectQuery {
 	q.joins = append(q.joins, newJoin(crossJoin, table, condition))
 	return q
 }
 
-func (q *selectQuery) Where(pred Builder) *selectQuery {
+func (q *SelectQuery) Where(pred Builder) *SelectQuery {
 	q.wherePreds = append(q.wherePreds, pred)
 	return q
 }
 
-func (q *selectQuery) Limit(l int) *selectQuery {
+func (q *SelectQuery) Limit(l int) *SelectQuery {
 	q.limit = &l
 	return q
 }
 
-func (q *selectQuery) ClearLimit() *selectQuery {
+func (q *SelectQuery) ClearLimit() *SelectQuery {
 	q.limit = nil
 	return q
 }
 
-func (q *selectQuery) Offset(o int) *selectQuery {
+func (q *SelectQuery) Offset(o int) *SelectQuery {
 	q.offset = &o
 	return q
 }
 
-func (q *selectQuery) ClearOffset() *selectQuery {
+func (q *SelectQuery) ClearOffset() *SelectQuery {
 	q.offset = nil
 	return q
 }
 
-func (q *selectQuery) GroupBy(cols ...string) *selectQuery {
+func (q *SelectQuery) GroupBy(cols ...string) *SelectQuery {
 	q.groupBys = append(q.groupBys, cols...)
 	return q
 }
 
-func (q *selectQuery) Having(pred Builder) *selectQuery {
+func (q *SelectQuery) Having(pred Builder) *SelectQuery {
 	q.havingPreds = append(q.havingPreds, pred)
 	return q
 }
 
-func (q *selectQuery) OrderBy(col string, dir OrderDir) *selectQuery {
+func (q *SelectQuery) OrderBy(col string, dir OrderDir) *SelectQuery {
 	q.orderBys = append(q.orderBys, fmt.Sprintf("%s %s", col, dir))
 	return q
 }
 
-func (q *selectQuery) RebindWith(r Rebinder) *selectQuery {
+func (q *SelectQuery) RebindWith(r Rebinder) *SelectQuery {
 	q.rebinder = r
 	return q
 }
 
-func (q *selectQuery) String() string {
+func (q *SelectQuery) String() string {
 	s, _, _ := q.Build()
 	return s
 }
 
-func (q *selectQuery) Build() (string, []interface{}, error) {
-	if q.table == nil {
+func (q *SelectQuery) Build() (string, []interface{}, error) {
+	if (q.table == "" && q.fromSub == nil) || (q.table != "" && q.fromSub != nil) {
 		return "", nil, ErrMissingTable
 	}
 
@@ -153,19 +166,15 @@ func (q *selectQuery) Build() (string, []interface{}, error) {
 	}
 	sb.WriteString(strings.Join(q.cols, ", "))
 
-	switch v := q.table.(type) {
-	case S:
-		s, _, _ := v.Build()
-		fmt.Fprintf(&sb, " FROM %s", s)
-	case Builder:
-		s, p, err := v.Build()
+	if q.table != "" {
+		fmt.Fprintf(&sb, " FROM %s", q.table)
+	} else {
+		s, p, err := q.fromSub.Build()
 		if err != nil {
 			return "", nil, err
 		}
 		params = append(params, p...)
 		fmt.Fprintf(&sb, " FROM (%s) AS t", s)
-	default:
-		return "", nil, ErrInvalidTable
 	}
 
 	if len(q.joins) > 0 {
